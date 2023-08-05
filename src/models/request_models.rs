@@ -1,9 +1,17 @@
 use serde::{Serialize,Deserialize};
-
+#[derive(Serialize,Deserialize,Debug)]
+pub struct HeaderModel{
+    pub user_id:String,
+    pub channel_id:i32,
+    pub version:String,
+    pub TVN:String,
+    pub SNO:String,
+    pub language_id:i32,
+    pub ip_address:String,
+}
 
 #[derive(Serialize,Deserialize,Debug)]
 pub struct PlayerCreationModel{
-    pub user_id:String,
     pub first_name:String,
     pub last_name:String,
     pub email:String,
@@ -17,17 +25,45 @@ pub struct PlayerCreationModel{
 
 }
 
-
-///////test
 #[derive(Serialize,Deserialize,Debug)]
-pub struct output_json{
-    pub id:i32,
-    pub name:String,
-    pub official_name:String,
-}
-#[derive(Serialize,Deserialize,Debug)]
-pub struct input_json{
-    id:i32
+pub struct PlayerLoginModel{
+    pub password:String,
+    pub captcha:String,
 }
 
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct AvailableGamesModel{
+    pub type_id:i32,
+}
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct PaymentInitModel{
+    pub amount :i64,
+    pub pg_type_id:i32,
+    pub pg_txn_id:String,
+    pub email:String,
+    pub item_description:String,
+}
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct AddMoneyModel{
+    pub type_id:i32,
+    pub amount:i64,
+    pub pg_type_id:i32,
+    pub pg_txn_id:String,
+    pub email:String,
+    pub item_description:String,
+}
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct WithdrawMoneyModel{
+    pub type_id:i32,
+    pub amount:i64,
+    pub pg_type_id:i32,
+    pub pg_txn_id:String,
+    pub pg_ref_id:String,
+    pub pg_data:String,
+    pub item_description:String,
+}
 

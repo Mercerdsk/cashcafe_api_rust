@@ -14,6 +14,7 @@ pub async fn db_connection()->Result<Client<Compat<TcpStream>>,Box<dyn std::erro
 
     config.host("192.168.10.215");
     config.port(1433);
+    config.database("CaseCafeOnlineWebDB");
     config.authentication(AuthMethod::sql_server("sa", "gitech123*gitech"));
     config.trust_cert(); // on production, it is not a good idea to do this
 
