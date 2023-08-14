@@ -172,9 +172,3 @@ pub struct PasswordModel{
     pub new_password:String,
     pub flag:i32,
 }
-
-#[derive(Serialize,Deserialize,Debug)]
-pub struct CaptchaModel{
-    pub secret_key:String,
-    pub recaptcha:String,
-}

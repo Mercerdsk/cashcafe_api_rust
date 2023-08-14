@@ -1,0 +1,18 @@
+[
+  {
+      "gamegroupID": 21,
+      "gamegroupName": "Slot"
+  },
+  {
+      "gamegroupID": 22,
+      "gamegroupName": "Sports"
+  },
+  {
+      "gamegroupID": 23,
+      "gamegroupName": "Virtual Games"
+  },
+  {
+      "gamegroupID": 24,
+      "gamegroupName": "Virtual Race"
+  }
+]

@@ -1,0 +1,8 @@
+{
+    "db_host":"192.168.10.215",
+    "db_port":1433,
+    "db_name":"CaseCafeOnlineWebDB",
+    "db_user_name":"sa",
+    "db_password":"gitech123*gitech",
+    "log_file_path":"/home/sasikumar/Analytics_RND/rust_files/cashcafe_api/src/log/"
+}

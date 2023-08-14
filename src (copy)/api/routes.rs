@@ -21,12 +21,4 @@ pub fn init_routes_v1(cfg: &mut web::ServiceConfig) {
     cfg.service(upd_player_profile_handler);
     cfg.service(buy_handler);
     cfg.service(kyc_verification_handler);
-    cfg.service(get_current_result_handler);
-    cfg.service(get_latest_result_handler);
-    cfg.service(transaction_history_handler);
-    cfg.service(player_reports_handler);
-    cfg.service(result_handler);
-    cfg.service(password_change_handler);
-    cfg.service(captcha_verify_handler);
-
 }

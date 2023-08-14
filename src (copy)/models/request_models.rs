@@ -1,16 +1,4 @@
 use serde::{Serialize,Deserialize};
-
-
-#[derive(Serialize,Deserialize,Debug)]
-pub struct GlobalConfigModel{
-    pub db_host:String,
-    pub db_port:u16,
-    pub db_name:String,
-    pub db_user_name:String,
-    pub db_password:String,
-    pub log_file_path:String,
-}
-
 #[derive(Serialize,Deserialize,Debug)]
 pub struct HeaderModel{
     pub user_id:String,
@@ -41,7 +29,6 @@ pub struct PlayerCreationModel{
 pub struct PlayerLoginModel{
     pub password:String,
     pub captcha:String,
-    pub type_id:i32,
 }
 
 
@@ -131,50 +118,4 @@ pub struct KycVerifyModel{
     pub id_type:String,
     pub id_no:String,
     pub address:String,
-}
-
-#[derive(Serialize,Deserialize,Debug)]
-pub struct GetCurrentResult{
-    pub game_group_id:i32,
-    pub draw_time:String,
-}
-
-#[derive(Serialize,Deserialize,Debug)]
-pub struct GetLatestResult{
-    pub game_group_id:i32,
-}
-
-#[derive(Serialize,Deserialize,Debug)]
-pub  struct TransHistoryModel{
-    pub from_date:String,
-    pub to_date:String,
-    pub type_id:i32,
-}
-
-#[derive(Serialize,Deserialize,Debug)]
-pub struct PlayerReportModel{
-    pub from_date:String,
-    pub to_date:String,
-    pub type_id:i32,
-}
-
-
-#[derive(Serialize,Deserialize,Debug)]
-pub struct ResultModel{
-    pub date:String,
-    pub game_group_id:i32,
-}
-
-
-#[derive(Serialize,Deserialize,Debug)]
-pub struct PasswordModel{
-    pub old_password:String,
-    pub new_password:String,
-    pub flag:i32,
-}
-
-#[derive(Serialize,Deserialize,Debug)]
-pub struct CaptchaModel{
-    pub secret_key:String,
-    pub recaptcha:String,
 }

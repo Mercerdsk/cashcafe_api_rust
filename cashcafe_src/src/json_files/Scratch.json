@@ -1,0 +1,82 @@
+[
+    {
+        "Type": 1,
+        "GameTypeID": 205,
+        "GameTypeName": "GEMS COLLECTION",
+        "GameUrl": "http://220.225.104.151/InstaSlot/InstantGames/",
+        "GameIcon": "GEMSCOLLECTION.webp",
+        "CategoryID": 2
+    },
+    {
+        "Type": 1,
+        "GameTypeID": 206,
+        "GameTypeName": "CANDY STREAK",
+        "GameUrl": "http://220.225.104.151/InstaSlot/InstantGames/",
+        "GameIcon": "CANDYSTREAK.webp",
+        "CategoryID": 2
+    },
+    {
+        "Type": 1,
+        "GameTypeID": 207,
+        "GameTypeName": "LUCKY 3",
+        "GameUrl": "http://220.225.104.151/InstaSlot/InstantGames/",
+        "GameIcon": "LUCKY3.webp",
+        "CategoryID": 2
+    },
+    {
+        "Type": 1,
+        "GameTypeID": 208,
+        "GameTypeName": "LUCKY TURTLE",
+        "GameUrl": "http://220.225.104.151/InstaSlot/InstantGames/",
+        "GameIcon": "LuckyTurtle.webp",
+        "CategoryID": 2
+    },
+    {
+        "Type": 1,
+        "GameTypeID": 209,
+        "GameTypeName": "STROMY SHOOTER",
+        "GameUrl": "http://220.225.104.151/InstaSlot/InstantGames/",
+        "GameIcon": "StromyShooter.webp",
+        "CategoryID": 2
+    },
+    {
+        "Type": 1,
+        "GameTypeID": 212,
+        "GameTypeName": "AFRICAN PEARLS",
+        "GameUrl": "http://220.225.104.151/InstaSlot/InstantGames/",
+        "GameIcon": "AfricanPearls.webp",
+        "CategoryID": 2
+    },
+    {
+        "Type": 1,
+        "GameTypeID": 213,
+        "GameTypeName": "LUCKY FISH",
+        "GameUrl": "http://220.225.104.151/InstaSlot/InstantGames/",
+        "GameIcon": "LuckyFish.webp",
+        "CategoryID": 2
+    },
+    {
+        "Type": 1,
+        "GameTypeID": 214,
+        "GameTypeName": "ERA GENIUS",
+        "GameUrl": "http://220.225.104.151/InstaSlot/InstantGames/",
+        "GameIcon": "EG_S.webp",
+        "CategoryID": 2
+    },
+    {
+        "Type": 1,
+        "GameTypeID": 215,
+        "GameTypeName": "KICK LUCKY",
+        "GameUrl": "http://220.225.104.151/InstaSlot/InstantGames/",
+        "GameIcon": "KickLucky.webp",
+        "CategoryID": 2
+    },
+    {
+        "Type": 2,
+        "GameTypeID": 217,
+        "GameTypeName": "MYSTERY QUEEN",
+        "GameUrl": "http://220.225.104.151/InstaSlot/InstantGames/",
+        "GameIcon": "mysteryqueen.webp",
+        "CategoryID": 2
+    }
+]

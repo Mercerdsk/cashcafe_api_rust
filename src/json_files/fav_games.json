@@ -1,0 +1,92 @@
+[
+    {
+        "gameID": 1,
+        "gamegroupID": 21,
+        "gameName": "Quick Win",
+        "favID":1
+    },
+    {
+        "gameID": 2,
+      "gamegroupID": 21,
+        "gameName": "Sports Betting",
+        "favID":1
+    },
+    {
+        "gameID": 3,
+      "gamegroupID": 22,
+        "gameName": "SICBO",
+        "favID":1
+    },
+    {
+        "gameID": 4,
+      "gamegroupID": 21,
+        "gameName": "Quick 9",
+        "favID":1
+    },
+    {
+        "gameID": 5,
+      "gamegroupID": 22,
+        "gameName": "Scratch",
+        "favID":1
+    },
+    {
+        "gameID": 6,
+      "gamegroupID": 23,
+        "gameName": "Panta",
+        "favID":1
+    },
+    {
+        "gameID": 7,
+      "gamegroupID": 22,
+        "gameName": "Big Win",
+        "favID":1
+    },
+    {
+        "gameID": 8,
+      "gamegroupID": 21,
+        "gameName": "VHR",
+        "favID":1
+    },
+    {
+        "gameID": 9,
+      "gamegroupID": 23,
+        "gameName": "VDR",
+        "favID":1
+    },
+    {
+        "gameID": 10,
+      "gamegroupID": 23,
+        "gameName": "Rapid Win",
+        "favID":1
+    },
+            
+            {
+        "gameID": 11,
+              "gamegroupID": 22,
+        "gameName": "Bells on fire",
+        "favID":2
+    },
+            {
+        "gameID": 12,
+              "gamegroupID": 24,
+        "gameName": "Burning Bells 40",
+        "favID":2
+    },
+            {
+        "gameID": 13,
+              "gamegroupID": 24,
+        "gameName": "HotStar",
+        "favID":2
+    },{
+        "gameID": 14,
+              "gamegroupID": 24,
+        "gameName": "Fruit Box",
+        "favID":2
+    },
+            {
+        "gameID": 15,
+              "gamegroupID": 24,
+        "gameName": "Plenty Dragons",
+        "favID":2
+    }                
+]

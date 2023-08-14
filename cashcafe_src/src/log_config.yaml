@@ -1,0 +1,26 @@
+appenders:
+  my_file_logger2:
+    kind: file
+    path: "log/my-{d(%d-%m-%Y)}.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)(utc)} - {h({l})}: {m}{n}"
+  my_file_logger:
+    kind: rolling_file
+    path: "log/my.log"
+    encoder:
+      pattern: "{d(%Y-%m-%d %H:%M:%S)} - {h({l})}: {m}{n}"
+    policy:
+      kind: compound
+      trigger:
+        kind: custom
+        interval: 20
+      roller:
+        kind: fixed_window
+        base: 1
+        count: 10
+        pattern: "log/my{}.log"
+root:
+  level: trace
+  appenders:
+    - my_file_logger
+    # - my_file_logger2
