@@ -12,6 +12,7 @@ use actix_web::middleware::Logger;
 use env_logger::Env;
 use std::path::Path;
 use std::fs::File;
+// use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
 
 
@@ -48,9 +49,15 @@ struct AppState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    println!("-------------------Starting Actix-Web Server-----------------");
 
     // setup_logging().expect("failed to initialize logging.");
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
+    //  let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+    // builder
+    //     .set_private_key_file("/home/sasikumar/Analytics_RND/rust_files/cashcafe_api/src/certicficates/key.key", SslFiletype::PEM)
+    //     .unwrap();
+    // builder.set_certificate_chain_file("/home/sasikumar/Analytics_RND/rust_files/cashcafe_api/src/certicficates/cert.crt").unwrap();
     HttpServer::new(|| {
         // let cors = Cors::default().allow_any_origin().send_wildcard();
         let cors = Cors::permissive()

@@ -17,30 +17,30 @@ use std::fs::File;
 
 
 //log build
-// fn setup_logging() -> Result<(), Box<dyn std::error::Error>> {
+fn setup_logging() -> Result<(), Box<dyn std::error::Error>> {
 
-//     let json_file_path= Path::new("./json_files/database_config.json");
-//     let file = File::open(json_file_path)?;
-//     let games:GlobalConfigModel=serde_json::from_reader(file)?;
-//     let path = Path::new(&games.log_file_path);
+    let json_file_path= Path::new("./json_files/database_config.json");
+    let file = File::open(json_file_path)?;
+    let games:GlobalConfigModel=serde_json::from_reader(file)?;
+    let path = Path::new(&games.log_file_path);
 
-//     fern::Dispatch::new()
-//         .format(|out, message, record| {
-//             out.finish(format_args!(
-//                 "[{:?} {} {}] {}",
-//                 Utc::now(),
-//                 record.level(),
-//                 record.target(),
-//                 message
-//             ))
-//         })
-//         .level(log::LevelFilter::Debug)
-//         .level_for("hyper", log::LevelFilter::Info)
-//         .chain(fern::DateBased::new(path, "%Y-%m-%d--api.log"))
-//         .apply()?;
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "[{:?} {} {}] {}",
+                Utc::now(),
+                record.level(),
+                record.target(),
+                message
+            ))
+        })
+        .level(log::LevelFilter::Debug)
+        .level_for("hyper", log::LevelFilter::Info)
+        .chain(fern::DateBased::new(path, "%Y-%m-%d--api.log"))
+        .apply()?;
 
-//     Ok(())
-// }
+    Ok(())
+}
 
 struct AppState {
     app_name: String,
@@ -49,6 +49,7 @@ struct AppState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    println!("-------------------Starting Actix-Web Server-----------------");
 
     // setup_logging().expect("failed to initialize logging.");
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
@@ -75,7 +76,7 @@ async fn main() -> std::io::Result<()> {
         .wrap(Logger::default())
         .service(web::scope("/v1").configure(init_routes_v1))
     })
-    .bind(("0.0.0.0", 8080))?
+    .bind(("0.0.0.0", 8007))?
     .run()
     .await
 }

@@ -59,7 +59,6 @@ pub struct FavGameModel{
 #[derive(Serialize,Debug,Deserialize)]
 pub struct TransType1Model{
          pub transaction_id:String,
-         pub selected_balls_no:String,
          pub draw_date_time:String,
          pub transaction_date_time:String,
          pub amount:String,

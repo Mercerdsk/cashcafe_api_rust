@@ -1,5 +1,6 @@
 use std::any::TypeId;
 
+use log::info;
 use serde_json::json;
 
 use crate::repository::database_connection::db_connection;
@@ -11,7 +12,8 @@ pub async fn player_creation_sp(header_value:HeaderModel,first_name:String,last_
     let mut client = db_connection().await?;
     let mut array_data:Vec<PlayerCreationResponse> = Vec::new();
     let qry = format!("EXEC CLI_INS_PlayerRegistration '{}',{},'{}','{}','{}',{},'{}','{}','{}','{}','{}','{}',{},{},{},'{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,first_name,last_name,email,dob,password,max_deposite_limit,max_bet_limit,kyc_id,kyc_id_number,postal_code);
-    println!("{}",qry);
+    println!("{:?}",&qry);
+    info!("{:?}",&qry);
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
         let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
@@ -499,6 +501,7 @@ pub async fn get_previous_result_sp(header_value:HeaderModel,game_group_id:i32)-
     let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
     let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
     let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+    let mut out_json:Vec<LastResultModel> = Vec::new();
     if status_id != '0'.to_string(){
         let out_json = json!({
             "TVN":tvn,
@@ -509,23 +512,15 @@ pub async fn get_previous_result_sp(header_value:HeaderModel,game_group_id:i32)-
         return Ok(json_string);
     }
     else {
-        let draw_no :&str=res_value[1][0].get("DrawNo").unwrap_or("");
-        let draw_date :&str=res_value[1][0].get("DrawDate").unwrap_or("");
-        let draw_time :&str=res_value[1][0].get("DrawTime").unwrap_or("");
-        let win_nods :&str=res_value[1][0].get("WinNos").unwrap_or("");
-        
-        
-        
-        let out_json = json!({
-            "TVN":tvn,
-            "Status_id":status_id,
-            "Message":message,
-            "draw_no":draw_no,
-            "draw_date":draw_date,
-            "draw_time":draw_time,
-            "win_nos":win_nods
-            
-        });
+            for i in &res_value[1]{
+                let out=LastResultModel{
+                    draw_no:String::from(i.get("DrawNo").unwrap_or("")),
+                    draw_date:String::from(i.get("DrawDate").unwrap_or("")),
+                    draw_time:String::from(i.get("DrawTime").unwrap_or("")),
+                    win_nods:String::from(i.get("WinNos").unwrap_or(""))
+                };
+                out_json.push(out);
+            }    
         let json_string = serde_json::to_string(&out_json)?;
         println!("{}",json_string);
         return Ok(json_string);
@@ -557,7 +552,6 @@ pub async fn transaction_history_sp(header_value:HeaderModel,from_date:String,to
             for i in &res_value[1]{
             let out_json:TransType1Model= TransType1Model{
                 transaction_id:String::from(i.get("Transaction_ID").unwrap_or("")),
-                selected_balls_no:String::from(i.get("Selected_Ball_No").unwrap_or("")),
                 draw_date_time:String::from(i.get("Draw_Date_Time").unwrap_or("")),
                 transaction_date_time:String::from(i.get("Transaction_Date_Time").unwrap_or("")),
                 amount:String::from(i.get("Amount").unwrap_or("")),
@@ -679,7 +673,6 @@ pub async fn result_sp(header_value:HeaderModel,date:String,game_group_id:i32)->
                 let out_struct:ResultTableModel= ResultTableModel { game_name:String::from(i.get("GameName").unwrap_or("null")),
                     draw_date: String::from(i.get("DrawDate").unwrap_or("null")),
                     result: String::from(i.get("Result").unwrap_or("null")),
-                    
                 };
                 out_put.push(out_struct);
             }
@@ -714,4 +707,39 @@ pub async fn password_change_sp(header_value:HeaderModel,old_password:String,new
         });
         let json_string = serde_json::to_string(&out_json)?;
         return Ok(json_string);
+    }
+
+
+
+pub async fn ticket_info_sp(header_value:HeaderModel,transaction_id:String,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
+    let mut client = db_connection().await?;
+    let qry = format!("EXEC CLI_GET_TicketInfo  '{}',{},'{}','{}','{}',{},'{}','{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,transaction_id,type_id);
+    println!("{}",qry);
+    let res = client.query(qry,&[]).await?;
+    let res_value=res.into_results().await?;
+    let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
+    let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
+    let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+    if status_id != '0'.to_string(){
+        let out_json = json!({
+            "TVN":tvn,
+            "Status_id":status_id,
+            "Message":message
+        });
+        let json_string = serde_json::to_string(&out_json)?;
+        return Ok(json_string);
+    }
+    else {
+        let ticket_info :&str=res_value[1][0].get("TicketInfo").unwrap_or("");
+        
+        let out_json = json!({
+            "TVN":tvn,
+            "Status_id":status_id,
+            "Message":message,
+            "print_info":ticket_info
+        });
+        let json_string = serde_json::to_string(&out_json)?;
+        println!("{}",json_string);
+        return Ok(json_string);
+    }
     }
