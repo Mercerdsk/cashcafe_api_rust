@@ -4,5 +4,6 @@
     "db_name":"CaseCafeOnlineWebDB",
     "db_user_name":"sa",
     "db_password":"gitech123*gitech",
-    "log_file_path":"/home/sasikumar/Analytics_RND/rust_files/cashcafe_api/src/log/"
+    "toggle_log":1,
+    "log_file_path":"/home/sasikumar/Analytics_RND/rust_files/cashcafe_api/log/"
 }

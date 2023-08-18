@@ -35,7 +35,7 @@ fn setup_logging() -> Result<(), Box<dyn std::error::Error>> {
             ))
         })
         .level(log::LevelFilter::Debug)
-        .level_for("hyper", log::LevelFilter::Info)
+        // .level_for("hyper", log::LevelFilter::Info)
         .chain(fern::DateBased::new(path, "%Y-%m-%d--api.log"))
         .apply()?;
 
@@ -50,9 +50,18 @@ struct AppState {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("-------------------Starting Actix-Web Server-----------------");
+    println!("-------------------Reading config file --------------------");
+    let json_file_path= Path::new("./json_files/database_config.json");
+    let file = File::open(json_file_path)?;
+    let games:GlobalConfigModel=serde_json::from_reader(file)?;
+    let toggle_log = games.toggle_log;
 
-    // setup_logging().expect("failed to initialize logging.");
-    env_logger::init_from_env(Env::default().default_filter_or("debug"));
+    if toggle_log==0{
+        setup_logging().expect("failed to initialize logging.");
+    }
+    else {
+        env_logger::init_from_env(Env::default().default_filter_or("debug"));
+    }
     //  let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
     // builder
     //     .set_private_key_file("/home/sasikumar/Analytics_RND/rust_files/cashcafe_api/src/certicficates/key.key", SslFiletype::PEM)

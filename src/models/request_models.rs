@@ -8,6 +8,7 @@ pub struct GlobalConfigModel{
     pub db_name:String,
     pub db_user_name:String,
     pub db_password:String,
+    pub toggle_log:i32,
     pub log_file_path:String,
 }
 
