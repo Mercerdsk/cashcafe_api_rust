@@ -432,9 +432,9 @@ pub async fn buy_sp(header_value:HeaderModel,reflotid:i32,group_id:i32,draw_time
     }
 
 
-pub async fn kyc_verification_sp(header_value:HeaderModel,type_id:i32,player_name:String,dob:String,nationality:String,id_type:String,id_no:String,address:String)->Result<String,Box<dyn std::error::Error>>{
+pub async fn kyc_verification_sp(header_value:HeaderModel,type_id:i32,player_name:String,dob:String,nationality:String,id_type:String,id_no:String,address:String,proof:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
-    let qry = format!("EXEC CLI_GET_KYCVerifiCation '{}',{},'{}','{}','{}',{},'{}','{}','{}','{}','{}','{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id,player_name,dob,nationality,id_type,id_no,address);
+    let qry = format!("EXEC CLI_GET_KYCVerifiCation '{}',{},'{}','{}','{}',{},'{}','{}','{}','{}','{}','{}','{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id,player_name,dob,nationality,id_type,id_no,address,proof);
     println!("{}",qry);
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;

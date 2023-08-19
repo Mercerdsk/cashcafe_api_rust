@@ -132,6 +132,7 @@ pub struct KycVerifyModel{
     pub id_type:String,
     pub id_no:String,
     pub address:String,
+    pub proof:String,
 }
 
 #[derive(Serialize,Deserialize,Debug)]
