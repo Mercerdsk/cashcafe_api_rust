@@ -35,7 +35,8 @@ fn setup_logging() -> Result<(), Box<dyn std::error::Error>> {
             ))
         })
         .level(log::LevelFilter::Debug)
-        // .level_for("hyper", log::LevelFilter::Info)
+        .level_for("tiberius", log::LevelFilter::Off)
+        .level_for("actix_web", log::LevelFilter::Off)
         .chain(fern::DateBased::new(path, "%Y-%m-%d--api.log"))
         .apply()?;
 
@@ -55,6 +56,7 @@ async fn main() -> std::io::Result<()> {
     let file = File::open(json_file_path)?;
     let games:GlobalConfigModel=serde_json::from_reader(file)?;
     let toggle_log = games.toggle_log;
+    let api_port = games.api_port;
 
     if toggle_log==0{
         setup_logging().expect("failed to initialize logging.");
@@ -85,7 +87,7 @@ async fn main() -> std::io::Result<()> {
         .wrap(Logger::default())
         .service(web::scope("/v1").configure(init_routes_v1))
     })
-    .bind(("0.0.0.0", 8007))?
+    .bind(("0.0.0.0", api_port))?
     .run()
     .await
 }

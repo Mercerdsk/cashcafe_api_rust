@@ -8,8 +8,11 @@ pub struct GlobalConfigModel{
     pub db_name:String,
     pub db_user_name:String,
     pub db_password:String,
+    pub api_port:u16,
     pub toggle_log:i32,
     pub log_file_path:String,
+    pub error_log:i32,
+    pub io_log:i32,
 }
 
 #[derive(Serialize,Deserialize,Debug)]

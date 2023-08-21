@@ -1,8 +1,11 @@
 use actix_web::{post,get, web,Result, Responder,http::header,HttpRequest,FromRequest};
+use log::error;
 use log::info;
 use serde_json::Value;
 use  std::fmt::Display;
 use chrono::{Utc,TimeZone};
+use std::path::Path;
+use std::fs::File;
 use crate::models::request_models::*;
 use crate::api::extractor_functions::header_extractor;
 use crate::repository::database_functions::*;
@@ -10,28 +13,36 @@ use crate::api::get_games_function::*;
 use reqwest;
 use reqwest::Error;
 use reqwest::Client;
+const ERROR_LOG: i32 = 0;
+const IO_LOG:i32 = 0;
 
-
-
+//-----------------Logger Toggle----------------------
+fn io_error_log_trigger()->(i32,i32){
+let json_file_path= Path::new("./json_files/database_config.json");
+    let file = File::open(json_file_path).expect("failed to read database_config");
+    let games:GlobalConfigModel=serde_json::from_reader(file).expect("failed to read database_config");
+    let toggle_error_log = games.error_log;
+    let toggle_io_log = games.io_log;
+    return (toggle_error_log,toggle_io_log);
+    // return (toggle_error_log,toggle_io_log);
+}
 //
 #[post("/player_creation/")]
 async fn player_creation_handler(info:web::Json<PlayerCreationModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
-    println!("received request{:?}",Utc::now());
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    println!(" created time stamp{:?}",Utc::now());
     let method = "player creation";
-    println!(" initialize method name{:?}",Utc::now());
-    let data = serde_json::to_string(&info).expect("failed to serializer");
-    println!(" Serializing json request{:?}",Utc::now());
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
-    println!("extracting header value {:?}",Utc::now());
-    info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
-    println!("finished log {:?}",Utc::now());
     // let user_id = req.headers().get("APIKEY").unwrap();
-    //Header Section
+    //Header 
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let first_name:String=info.first_name.to_string();
     let last_name:String=info.last_name.to_string();
@@ -49,10 +60,15 @@ async fn player_creation_handler(info:web::Json<PlayerCreationModel>,req:HttpReq
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -66,14 +82,18 @@ async fn player_login_handler(info:web::Json<PlayerLoginModel>,req:HttpRequest)-
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "player login";
-    let data = serde_json::to_string(&info).expect("failed to serializer");
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
-    info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
     let password:String=info.password.to_string();
     let captcha:String=info.captcha.to_string();
     let type_id:i32=info.type_id;
@@ -83,10 +103,15 @@ async fn player_login_handler(info:web::Json<PlayerLoginModel>,req:HttpRequest)-
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -105,7 +130,11 @@ async fn get_balance_handler(req:HttpRequest)-> Result<impl Responder,Box<dyn st
     info!("{},,,,,{}",req_stamp,method);
     //Header Section
     let header_value = header_extractor(req).await?;
-    info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+    //IO Logging Section
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ",req_stamp,method,header_value);
+    }
+    //IO Logging
 
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
@@ -117,7 +146,9 @@ async fn get_balance_handler(req:HttpRequest)-> Result<impl Responder,Box<dyn st
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -132,13 +163,17 @@ async fn available_games_handler(info:web::Json<AvailableGamesModel>,req:HttpReq
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "available games";
-    let data = serde_json::to_string(&info).expect("failed to serializer");
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
-    info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let type_id:i32=info.type_id;
     //json body
@@ -147,10 +182,15 @@ async fn available_games_handler(info:web::Json<AvailableGamesModel>,req:HttpReq
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -164,13 +204,17 @@ async fn payment_init_handler(info:web::Json<PaymentInitModel>,req:HttpRequest)-
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "payment init";
-    let data = serde_json::to_string(&info).expect("failed to serializer");
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
-    info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let amount = info.amount;
     let pg_type_id = info.pg_type_id;
@@ -183,10 +227,15 @@ async fn payment_init_handler(info:web::Json<PaymentInitModel>,req:HttpRequest)-
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -200,13 +249,17 @@ async fn add_money_handler(info:web::Json<AddMoneyModel>,req:HttpRequest)-> Resu
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "add money";
-    let data = serde_json::to_string(&info).expect("failed to serializer");
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
-    info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let type_id = info.type_id;
     let amount = info.amount;
@@ -220,10 +273,15 @@ async fn add_money_handler(info:web::Json<AddMoneyModel>,req:HttpRequest)-> Resu
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -236,13 +294,17 @@ async fn withdraw_money_handler(info:web::Json<WithdrawMoneyModel>,req:HttpReque
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "withdraw money";
-    let data = serde_json::to_string(&info).expect("failed to serializer");
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
-    info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let type_id = info.type_id;
     let amount = info.amount;
@@ -257,10 +319,15 @@ async fn withdraw_money_handler(info:web::Json<WithdrawMoneyModel>,req:HttpReque
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -273,13 +340,17 @@ async fn otp_validation_handler(info:web::Json<OtpValidation>,req:HttpRequest)->
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "otp validation";
-    let data = serde_json::to_string(&info).expect("failed to serializer");
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
-    info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let otp = info.otp.to_string();
     //json body
@@ -288,10 +359,15 @@ async fn otp_validation_handler(info:web::Json<OtpValidation>,req:HttpRequest)->
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -304,13 +380,17 @@ async fn otp_generation_handler(info:web::Json<OtpGeneration>,req:HttpRequest)->
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "otp generation";
-    // let data = serde_json::to_string(&info).expect("failed to serializer");
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
-    // info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let type_id = info.type_id;
     //json body
@@ -319,10 +399,15 @@ async fn otp_generation_handler(info:web::Json<OtpGeneration>,req:HttpRequest)->
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -339,9 +424,13 @@ async fn get_games_handler(req:HttpRequest)-> Result<impl Responder,Box<dyn std:
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
-    info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ",req_stamp,method,header_value);
+    }
+    //IO Logging
     // json body
     // let otp = info.otp.to_string();
     //json body
@@ -349,12 +438,16 @@ async fn get_games_handler(req:HttpRequest)-> Result<impl Responder,Box<dyn std:
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
-            println!("{:?}",j);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -367,13 +460,17 @@ async fn get_fav_games_handler(info:web::Json<GetFavGamesModel>,req:HttpRequest)
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get poplar games";
-    // let data = serde_json::to_string(&info).expect("failed to serializer");
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
-    // info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let game_group_id = info.game_group_id.to_string();
     //json body
@@ -381,12 +478,16 @@ async fn get_fav_games_handler(info:web::Json<GetFavGamesModel>,req:HttpRequest)
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
-            println!("{:?}",j);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -401,13 +502,17 @@ async fn get_fav_games_handler(info:web::Json<GetFavGamesModel>,req:HttpRequest)
 async fn get_server_time_handler(req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    let method = "add money";
-    // let data = serde_json::to_string(&info).expect("failed to serializer");
+    let method = "get server time";
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+    }
+    //IO Logging
     // json body
     // let game_group_id = info.game_group_id.to_string();
     //json body
@@ -415,12 +520,16 @@ async fn get_server_time_handler(req:HttpRequest)-> Result<impl Responder,Box<dy
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
-            println!("{:?}",j);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -434,13 +543,18 @@ async fn get_server_time_handler(req:HttpRequest)-> Result<impl Responder,Box<dy
 async fn get_slot_games_handler(info:web::Json<GetSlotGames>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    let method = "add money";
-    // let data = serde_json::to_string(&info).expect("failed to serializer");
+    let method = "get slot games";
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let game_type_id = info.game_type_id;
     //json body
@@ -449,10 +563,15 @@ async fn get_slot_games_handler(info:web::Json<GetSlotGames>,req:HttpRequest)-> 
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -465,22 +584,31 @@ async fn get_slot_games_handler(info:web::Json<GetSlotGames>,req:HttpRequest)-> 
 async fn get_player_profile_handler(req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    let method = "get balance";
+    let method = "get player profile";
     // request logger....
-    info!("{},,,,,{}",req_stamp,method);
     //Header Section
     let header_value = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+    }
+    //IO Logging
     let result = get_player_profile_sp(header_value).await;
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -492,13 +620,19 @@ async fn get_player_profile_handler(req:HttpRequest)-> Result<impl Responder,Box
 async fn upd_player_profile_handler(info:web::Json<PlayerProfileUpdate>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    let method = "add money";
+    let method = "update player profile";
     // let data = serde_json::to_string(&info).expect("failed to serializer");
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let player_image = info.player_image.to_string();
     let player_name = info.player_name.to_string();
@@ -511,10 +645,15 @@ async fn upd_player_profile_handler(info:web::Json<PlayerProfileUpdate>,req:Http
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -528,13 +667,18 @@ async fn upd_player_profile_handler(info:web::Json<PlayerProfileUpdate>,req:Http
 async fn buy_handler(info:web::Json<BuyModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    let method = "add money";
-    // let data = serde_json::to_string(&info).expect("failed to serializer");
+    let method = "sell ticket";
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let reflot = info.reflot;
     let group_id = info.group_id;
@@ -550,10 +694,15 @@ async fn buy_handler(info:web::Json<BuyModel>,req:HttpRequest)-> Result<impl Res
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -566,13 +715,18 @@ async fn buy_handler(info:web::Json<BuyModel>,req:HttpRequest)-> Result<impl Res
 async fn kyc_verification_handler(info:web::Json<KycVerifyModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    let method = "add money";
-    // let data = serde_json::to_string(&info).expect("failed to serializer");
+    let method = "kyc verify";
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let player_name = info.player_name.to_string();
     let dob = info.dob.to_string();
@@ -589,10 +743,15 @@ async fn kyc_verification_handler(info:web::Json<KycVerifyModel>,req:HttpRequest
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -604,13 +763,18 @@ async fn kyc_verification_handler(info:web::Json<KycVerifyModel>,req:HttpRequest
 async fn get_current_result_handler(info:web::Json<GetCurrentResult>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    let method = "add money";
-    // let data = serde_json::to_string(&info).expect("failed to serializer");
+    let method = "get current result";
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let game_groupid = info.game_group_id;
     let draw_time = info.draw_time.to_string();
@@ -621,10 +785,15 @@ async fn get_current_result_handler(info:web::Json<GetCurrentResult>,req:HttpReq
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -638,13 +807,18 @@ async fn get_current_result_handler(info:web::Json<GetCurrentResult>,req:HttpReq
 async fn get_latest_result_handler(info:web::Json<GetLatestResult>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    let method = "add money";
-    // let data = serde_json::to_string(&info).expect("failed to serializer");
+    let method = "get latest result";
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let game_groupid = info.game_group_id;
     
@@ -654,10 +828,15 @@ async fn get_latest_result_handler(info:web::Json<GetLatestResult>,req:HttpReque
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -670,13 +849,18 @@ async fn get_latest_result_handler(info:web::Json<GetLatestResult>,req:HttpReque
 async fn transaction_history_handler(info:web::Json<TransHistoryModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    let method = "add money";
-    // let data = serde_json::to_string(&info).expect("failed to serializer");
+    let method = "transaction history";
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let from_date = info.from_date.to_string();
     let to_date = info.to_date.to_string();
@@ -688,10 +872,15 @@ async fn transaction_history_handler(info:web::Json<TransHistoryModel>,req:HttpR
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -704,13 +893,18 @@ async fn transaction_history_handler(info:web::Json<TransHistoryModel>,req:HttpR
 async fn player_reports_handler(info:web::Json<PlayerReportModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    let method = "add money";
-    // let data = serde_json::to_string(&info).expect("failed to serializer");
+    let method = "player reports";
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let from_date = info.from_date.to_string();
     let to_date = info.to_date.to_string();
@@ -725,7 +919,9 @@ async fn player_reports_handler(info:web::Json<PlayerReportModel>,req:HttpReques
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -738,13 +934,18 @@ async fn player_reports_handler(info:web::Json<PlayerReportModel>,req:HttpReques
 async fn result_handler(info:web::Json<ResultModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    let method = "result";
-    // let data = serde_json::to_string(&info).expect("failed to serializer");
+    let method = "get result";
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let date = info.date.to_string();
     let game_group_id = info.game_group_id;
@@ -755,10 +956,15 @@ async fn result_handler(info:web::Json<ResultModel>,req:HttpRequest)-> Result<im
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -770,13 +976,18 @@ async fn result_handler(info:web::Json<ResultModel>,req:HttpRequest)-> Result<im
 async fn password_change_handler(info:web::Json<PasswordModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    let method = "result";
-    // let data = serde_json::to_string(&info).expect("failed to serializer");
+    let method = "password change";
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let old_passsword = info.old_password.to_string();
     let new_password = info.new_password.to_string();
@@ -788,10 +999,15 @@ async fn password_change_handler(info:web::Json<PasswordModel>,req:HttpRequest)-
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -804,13 +1020,18 @@ async fn password_change_handler(info:web::Json<PasswordModel>,req:HttpRequest)-
 async fn ticket_info_handler(info:web::Json<TicketInfoModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    let method = "result";
-    // let data = serde_json::to_string(&info).expect("failed to serializer");
+    let method = "ticket info";
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let transaction_id = info.transaction_id.to_string();
     let type_id = info.type_id;
@@ -821,10 +1042,15 @@ async fn ticket_info_handler(info:web::Json<TicketInfoModel>,req:HttpRequest)-> 
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            if IO_LOG ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{
-            println!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
             return Ok(web::Json(parsed)) 
         }
@@ -836,13 +1062,18 @@ async fn ticket_info_handler(info:web::Json<TicketInfoModel>,req:HttpRequest)-> 
 async fn captcha_verify_handler(info:web::Json<CaptchaModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    let method = "result";
-    // let data = serde_json::to_string(&info).expect("failed to serializer");
+    let method = "captchaverify";
     // request logger....
     //Header Section
     let header_value = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
+    //IO Logging Section
+    if IO_LOG ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
     // json body
     let security_key = info.secret_key.to_string();
     let captcha = info.recaptcha.to_string();
@@ -856,6 +1087,4 @@ async fn captcha_verify_handler(info:web::Json<CaptchaModel>,req:HttpRequest)-> 
     let out_res = &response.text().await?;
     let parsed: Value = serde_json::from_str(&out_res)?;
     return Ok(web::Json(parsed));
-
-    
 }
