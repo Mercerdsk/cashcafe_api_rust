@@ -52,7 +52,10 @@ pub struct FavGameModel{
     gameID: i32,
     gamegroupID: i32,
     gameName: String,
+    icon:String,
+    gameUrl:String,
     favID:i32,
+    ggId:String,
 }
 
 

@@ -1,92 +1,102 @@
 [
-    {
-        "gameID": 1,
-        "gamegroupID": 21,
-        "gameName": "Quick Win",
-        "favID":1
-    },
-    {
-        "gameID": 2,
-      "gamegroupID": 21,
-        "gameName": "Sports Betting",
-        "favID":1
-    },
-    {
-        "gameID": 3,
-      "gamegroupID": 22,
-        "gameName": "SICBO",
-        "favID":1
-    },
-    {
-        "gameID": 4,
-      "gamegroupID": 21,
-        "gameName": "Quick 9",
-        "favID":1
-    },
-    {
-        "gameID": 5,
-      "gamegroupID": 22,
-        "gameName": "Scratch",
-        "favID":1
-    },
-    {
-        "gameID": 6,
-      "gamegroupID": 23,
-        "gameName": "Panta",
-        "favID":1
-    },
-    {
-        "gameID": 7,
-      "gamegroupID": 22,
-        "gameName": "Big Win",
-        "favID":1
-    },
-    {
-        "gameID": 8,
-      "gamegroupID": 21,
-        "gameName": "VHR",
-        "favID":1
-    },
-    {
-        "gameID": 9,
-      "gamegroupID": 23,
-        "gameName": "VDR",
-        "favID":1
-    },
-    {
-        "gameID": 10,
-      "gamegroupID": 23,
-        "gameName": "Rapid Win",
-        "favID":1
-    },
-            
-            {
-        "gameID": 11,
-              "gamegroupID": 22,
-        "gameName": "Bells on fire",
-        "favID":2
-    },
-            {
-        "gameID": 12,
-              "gamegroupID": 24,
-        "gameName": "Burning Bells 40",
-        "favID":2
-    },
-            {
-        "gameID": 13,
-              "gamegroupID": 24,
-        "gameName": "HotStar",
-        "favID":2
-    },{
-        "gameID": 14,
-              "gamegroupID": 24,
-        "gameName": "Fruit Box",
-        "favID":2
-    },
-            {
-        "gameID": 15,
-              "gamegroupID": 24,
-        "gameName": "Plenty Dragons",
-        "favID":2
-    }                
+  {
+      "gameID": 1,
+      "gamegroupID": 3,
+      "gameName": "Quick Win",
+      "icon": "Quick-Win.webp",   
+      "gameUrl":"/quickwin",         
+      "favID":1,
+      "ggId":"41"
+  },
+  {
+      "gameID": 3,
+      "gamegroupID": 3,
+      "gameName": "SICBO",
+      "icon": "sic-bo.webp",
+      "gameUrl":"/sicbo",
+      "favID":1,
+      "ggId":"48"
+  },
+  {
+      "gameID": 4,
+      "gamegroupID": 3,
+      "gameName": "Quick 9",
+      "icon": "quick-9.webp",
+      "gameUrl":"/quick9",
+      "favID":1,
+      "ggId":"42"
+  },
+  {
+      "gameID": 5,
+      "gamegroupID": 3,
+      "gameName": "Scratch",
+      "icon": "scratch.webp",
+      "gameUrl":"/scratch",
+      "favID":1,
+      "ggId":"59"
+  },
+  {
+      "gameID": 6,
+      "gamegroupID": 3,
+      "gameName": "Panta",
+      "icon": "panta.webp",
+      "gameUrl":"/Panta",
+      "favID":1,
+      "ggId":"59"
+  },    
+  {
+      "gameID": 10,
+      "gamegroupID": 3,
+      "gameName": "Rapid Win",
+      "icon": "rapid-win.webp",
+      "gameUrl":"/rapidwin",
+      "favID":1,
+      "ggId":"41"
+  },
+  
+  {
+      "gameID": 2,
+      "gamegroupID": 1,
+      "gameName": "ROMAN LEGIONS 100",
+      "icon": "RomanLegions100.webp",
+      "gameUrl":"https://cashcafe.ae/cashcafeinstaslot/SlotWays_v2/",
+      "favID":167,
+      "ggId":"60"
+  },
+  {
+      "gameID":2 ,
+      "gamegroupID": 1,
+      "gameName": "GOLDEN MIC",
+      "icon": "GoldenMic.webp",
+      "gameUrl":"https://cashcafe.ae/cashcafeinstaslot/SlotWays_v2/",
+      "favID":500,
+      "ggId":"60"
+  },
+  {
+      "gameID": 2,
+      "gamegroupID": 1,
+      "gameName": "FORTUNE PIRATES 50",
+      "icon": "FORTUNEPIRATES_50L.webp",
+      "gameUrl":"https://cashcafe.ae/cashcafeinstaslot/SlotWays_v2/",
+      "favID":162,
+      "ggId":"60"
+  },
+  {
+      "gameID": 2,
+      "gamegroupID": 1,
+      "gameName": "FORTUNE PIRATES 40",
+      "icon": "FORTUNEPIRATES_40L.webp",
+      "gameUrl":"https://cashcafe.ae/cashcafeinstaslot/SlotWays_v2/",
+      "favID":161,
+      "ggId":"60"
+  },
+  {
+      "gameID": 2,
+      "gamegroupID": 1,
+      "gameName": "Magic Aquarium 10",
+      "icon": "MagicAquarium10.webp",
+      "gameUrl":"https://cashcafe.ae/cashcafeinstaslot/SlotWays_v2/",
+      "favID":154,
+      "ggId":"60"
+  }		
 ]
