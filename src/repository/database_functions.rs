@@ -1,5 +1,3 @@
-use std::any::TypeId;
-
 use log::info;
 use serde_json::json;
 
@@ -8,14 +6,19 @@ use crate::models::request_models::*;
 use crate::models::response_models::*;
 
 
-pub async fn player_creation_sp(header_value:HeaderModel,first_name:String,last_name:String,email:String,dob:String,password:String,max_deposite_limit:i32,max_bet_limit:i32,kyc_id:i32,kyc_id_number:String,postal_code:String)->Result<String,Box<dyn std::error::Error>>{
+pub async fn player_creation_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,first_name:String,last_name:String,email:String,dob:String,password:String,max_deposite_limit:i32,max_bet_limit:i32,kyc_id:i32,kyc_id_number:String,postal_code:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let mut array_data:Vec<PlayerCreationResponse> = Vec::new();
     let qry = format!("EXEC CLI_INS_PlayerRegistration '{}',{},'{}','{}','{}',{},'{}','{}','{}','{}','{}','{}',{},{},{},'{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,first_name,last_name,email,dob,password,max_deposite_limit,max_bet_limit,kyc_id,kyc_id_number,postal_code);
     println!("{:?}",&qry);
-    info!("{:?}",&qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
         let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
         let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("");
         let message:&str = res_value[0][0].get("Message").unwrap_or("null");
@@ -30,12 +33,18 @@ pub async fn player_creation_sp(header_value:HeaderModel,first_name:String,last_
     }
 
 
-pub async fn player_login_sp(header_value:HeaderModel,password:String,captcha:String,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
+pub async fn player_login_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,password:String,captcha:String,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client: tiberius::Client<tokio_util::compat::Compat<tokio::net::TcpStream>> = db_connection().await?;
     let qry = format!("EXEC CLI_PlayerLogin '{}',{},'{}','{}','{}',{},'{}','{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,password,captcha,type_id);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
         let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
         let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
         let message:&str = res_value[0][0].get("Message").unwrap_or("null");
@@ -69,12 +78,18 @@ pub async fn player_login_sp(header_value:HeaderModel,password:String,captcha:St
         }
     }
 
-pub async fn get_balance_sp(header_value:HeaderModel)->Result<String,Box<dyn std::error::Error>>{
+pub async fn get_balance_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_Balance '{}',{},'{}','{}','{}',{},'{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
         let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
         let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
         let message:&str = res_value[0][0].get("Message").unwrap_or("null");
@@ -105,12 +120,18 @@ pub async fn get_balance_sp(header_value:HeaderModel)->Result<String,Box<dyn std
     }
 
 
-pub async fn available_games_sp(header_value:HeaderModel,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
+pub async fn available_games_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_AvailableGames '{}',{},'{}','{}','{}',{},'{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
         let status_id:&str = res_value[0][0].get(1).unwrap_or("null");
         let tvn:&str = res_value[0][0].get(0).unwrap_or("null");
         let message:&str = res_value[0][0].get(2).unwrap_or("null");
@@ -158,12 +179,18 @@ pub async fn available_games_sp(header_value:HeaderModel,type_id:i32)->Result<St
 
 
 
-pub async fn payment_init_sp(header_value:HeaderModel,amount:i64,pg_type_id:i32,pg_txn_id:String,email:String,item_des:String)->Result<String,Box<dyn std::error::Error>>{
+pub async fn payment_init_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,amount:i64,pg_type_id:i32,pg_txn_id:String,email:String,item_des:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_PayMentInitRequest '{}',{},'{}','{}','{}',{},'{}',{},{},'{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,amount,pg_type_id,pg_txn_id,email,item_des);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
         let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
         let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
         let message:&str = res_value[0][0].get("Message").unwrap_or("null");
@@ -194,12 +221,18 @@ pub async fn payment_init_sp(header_value:HeaderModel,amount:i64,pg_type_id:i32,
     }
 
     
-pub async fn add_money_sp(header_value:HeaderModel,type_id:i32,amount:i64,pg_type_id:i32,pg_txn_id:String,email:String,item_des:String)->Result<String,Box<dyn std::error::Error>>{
+pub async fn add_money_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type_id:i32,amount:i64,pg_type_id:i32,pg_txn_id:String,email:String,item_des:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_AddMoneyRequest '{}',{},'{}','{}','{}',{},'{}',{},{},{},'{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id,amount,pg_type_id,pg_txn_id,email,item_des);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
         let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
         let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
         let message:&str = res_value[0][0].get("Message").unwrap_or("null");
@@ -233,12 +266,18 @@ pub async fn add_money_sp(header_value:HeaderModel,type_id:i32,amount:i64,pg_typ
 
 
 
-pub async fn withdraw_money_sp(header_value:HeaderModel,type_id:i32,amount:i64,pg_type_id:i32,pg_txn_id:String,pg_ref_id:String,pg_data:String,item_des:String)->Result<String,Box<dyn std::error::Error>>{
+pub async fn withdraw_money_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type_id:i32,amount:i64,pg_type_id:i32,pg_txn_id:String,pg_ref_id:String,pg_data:String,item_des:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_WithDrawRequest   '{}',{},'{}','{}','{}',{},'{}',{},{},{},'{}','{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id,amount,pg_type_id,pg_txn_id,pg_ref_id,pg_data,item_des);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
         let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
         let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
         let message:&str = res_value[0][0].get("Message").unwrap_or("null");
@@ -271,12 +310,18 @@ pub async fn withdraw_money_sp(header_value:HeaderModel,type_id:i32,amount:i64,p
     }
 
     
-pub async fn otp_validation_sp(header_value:HeaderModel,otp:String)->Result<String,Box<dyn std::error::Error>>{
+pub async fn otp_validation_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,otp:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_OTPValidate '{}',{},'{}','{}','{}',{},'{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,otp);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
         let status_id:&str = res_value[0][0].get(1).unwrap_or("null");
         let tvn:&str = res_value[0][0].get(0).unwrap_or("null");
         let message:&str = res_value[0][0].get(2).unwrap_or("null");
@@ -290,12 +335,18 @@ pub async fn otp_validation_sp(header_value:HeaderModel,otp:String)->Result<Stri
     }
 
 
-pub async fn otp_generation_sp(header_value:HeaderModel,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
+pub async fn otp_generation_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_OTPGeneration '{}',{},'{}','{}','{}',{},'{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
         let status_id:&str = res_value[0][0].get(1).unwrap_or("null");
         let tvn:&str = res_value[0][0].get(0).unwrap_or("null");
         let message:&str = res_value[0][0].get(2).unwrap_or("null");
@@ -308,12 +359,18 @@ pub async fn otp_generation_sp(header_value:HeaderModel,type_id:i32)->Result<Str
         return Ok(json_string);
     }
 
-pub async fn get_server_time_sp(header_value:HeaderModel)->Result<String,Box<dyn std::error::Error>>{
+pub async fn get_server_time_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_ServerTime '{}',{},'{}','{}','{}',{},'{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
         let date_time:&str = res_value[0][0].get(0).unwrap_or("null");
         let out_json = json!({
             "Status_id":"0",
@@ -324,12 +381,18 @@ pub async fn get_server_time_sp(header_value:HeaderModel)->Result<String,Box<dyn
     }
 
 
-pub async fn get_player_profile_sp(header_value:HeaderModel)->Result<String,Box<dyn std::error::Error>>{
+pub async fn get_player_profile_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_Profile '{}',{},'{}','{}','{}',{},'{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
         let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
         let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
         let message:&str = res_value[0][0].get("Message").unwrap_or("null");
@@ -369,12 +432,18 @@ pub async fn get_player_profile_sp(header_value:HeaderModel)->Result<String,Box<
 
 
 
-pub async fn update_player_profile_sp(header_value:HeaderModel,player_image:String,player_name:String,email:String,kyc_no:String,dob:String)->Result<String,Box<dyn std::error::Error>>{
+pub async fn update_player_profile_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,player_image:String,player_name:String,email:String,kyc_no:String,dob:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_UPD_PlayerProfile '{}',{},'{}','{}','{}',{},'{}','{}','{}','{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,player_image,player_name,email,kyc_no,dob);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
         let status_id:&str = res_value[0][0].get(1).unwrap_or("null");
         let tvn:&str = res_value[0][0].get(0).unwrap_or("null");
         let message:&str = res_value[0][0].get(2).unwrap_or("null");
@@ -388,12 +457,18 @@ pub async fn update_player_profile_sp(header_value:HeaderModel,player_image:Stri
     }
 
     
-pub async fn buy_sp(header_value:HeaderModel,reflotid:i32,group_id:i32,draw_time:String,bet_info:String,client_transid:String,amount:i64,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
+pub async fn buy_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,reflotid:i32,group_id:i32,draw_time:String,bet_info:String,client_transid:String,amount:i64,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC TRA_OnelineSales '{}',{},'{}','{}','{}',{},'{}',{},{},'{}','{}','{}','{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,reflotid,group_id,draw_time,bet_info,client_transid,amount,type_id);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
         let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
         let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
         let message:&str = res_value[0][0].get("Message").unwrap_or("null");
@@ -432,12 +507,18 @@ pub async fn buy_sp(header_value:HeaderModel,reflotid:i32,group_id:i32,draw_time
     }
 
 
-pub async fn kyc_verification_sp(header_value:HeaderModel,type_id:i32,player_name:String,dob:String,nationality:String,id_type:String,id_no:String,address:String,proof:String)->Result<String,Box<dyn std::error::Error>>{
+pub async fn kyc_verification_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type_id:i32,player_name:String,dob:String,nationality:String,id_type:String,id_no:String,address:String,proof:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_KYCVerifiCation '{}',{},'{}','{}','{}',{},'{}','{}','{}','{}','{}','{}','{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id,player_name,dob,nationality,id_type,id_no,address,proof);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
         let status_id:&str = res_value[0][0].get(1).unwrap_or("null");
         let tvn:&str = res_value[0][0].get(0).unwrap_or("null");
         let message:&str = res_value[0][0].get(2).unwrap_or("null");
@@ -450,12 +531,18 @@ pub async fn kyc_verification_sp(header_value:HeaderModel,type_id:i32,player_nam
         return Ok(json_string);
     }
 
-pub async fn get_current_result_sp(header_value:HeaderModel,game_group_id:i32,draw_time:String)->Result<String,Box<dyn std::error::Error>>{
+pub async fn get_current_result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,game_group_id:i32,draw_time:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_Currentresult '{}',{},'{}','{}','{}',{},'{}',{},'{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,game_group_id,draw_time);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
     let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
     let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
     let message:&str = res_value[0][0].get("Message").unwrap_or("null");
@@ -492,12 +579,18 @@ pub async fn get_current_result_sp(header_value:HeaderModel,game_group_id:i32,dr
     }
     }
 
-pub async fn get_previous_result_sp(header_value:HeaderModel,game_group_id:i32)->Result<String,Box<dyn std::error::Error>>{
+pub async fn get_previous_result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,game_group_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_PreviousDrawResult '{}',{},'{}','{}','{}',{},'{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,game_group_id);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
     let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
     let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
     let message:&str = res_value[0][0].get("Message").unwrap_or("null");
@@ -528,12 +621,18 @@ pub async fn get_previous_result_sp(header_value:HeaderModel,game_group_id:i32)-
     }
 
 
-pub async fn transaction_history_sp(header_value:HeaderModel,from_date:String,to_date:String,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
+pub async fn transaction_history_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,from_date:String,to_date:String,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_TransactionDetails '{}',{},'{}','{}','{}',{},'{}','{}','{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,from_date,to_date,type_id);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
     let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
     let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
     let message:&str = res_value[0][0].get("Message").unwrap_or("null");
@@ -597,15 +696,22 @@ pub async fn transaction_history_sp(header_value:HeaderModel,from_date:String,to
     }
     }
 
-pub async fn player_reports_sp(header_value:HeaderModel,from_date:String,to_date:String,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
+pub async fn player_reports_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,from_date:String,to_date:String,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_PlayerReports  '{}',{},'{}','{}','{}',{},'{}','{}','{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,from_date,to_date,type_id);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
     let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
     let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
     let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+    
     if status_id != '0'.to_string(){
         let out_json = json!({
             "TVN":tvn,
@@ -616,30 +722,24 @@ pub async fn player_reports_sp(header_value:HeaderModel,from_date:String,to_date
         return Ok(json_string);
     }
     else {
-        let from_date :&str=res_value[1][0].get("FromDate").unwrap_or("");
-        let to_date :&str=res_value[1][0].get("ToDate").unwrap_or("");
-        let bet_amount :&str=res_value[1][0].get("BetAmount").unwrap_or("");
-        let win_amount :&str=res_value[1][0].get("WinAmount").unwrap_or("");
-        let add_money :&str=res_value[1][0].get("Addmoney").unwrap_or("");
-        let withdraw_money :&str=res_value[1][0].get("WithDraw").unwrap_or("");
-        let bonus_amount :&str=res_value[1][0].get("BonusAmount").unwrap_or("");
-        let net_amount :&str=res_value[1][0].get("NetAmount").unwrap_or("");
-        
-        
+        let mut json_array:Vec<PlayerReportsResponse>=Vec::new();
+        for i in &res_value[1]{
+            let out_json:PlayerReportsResponse=PlayerReportsResponse { from_date: String::from(i.get("FromDate").unwrap_or("")),
+                            to_date:String::from(i.get("ToDate").unwrap_or("")), 
+                            bet_amount:String::from(i.get("BetAmount").unwrap_or("")), 
+                            win_amount:String::from(i.get("WinAmount").unwrap_or("")), 
+                            add_money:String::from(i.get("Addmoney").unwrap_or("")), 
+                            withdraw_money:String::from(i.get("WithDraw").unwrap_or("")), 
+                            bonus_amount:String::from(i.get("BonusAmount").unwrap_or("")), 
+                            net_amount:String::from(i.get("NetAmount").unwrap_or("")) };
+            json_array.push(out_json);
+        }
         
         let out_json = json!({
             "TVN":tvn,
             "Status_id":status_id,
             "Message":message,
-            "from_date":from_date,
-            "to_date":to_date,
-            "bet_amount":bet_amount,
-            "win_amount":win_amount,
-            "add_money":add_money,
-            "withdraw_money":withdraw_money,
-            "bonus_amount":bonus_amount,
-            "net_amount":net_amount
-            
+            "Info":json_array
         });
         let json_string = serde_json::to_string(&out_json)?;
         println!("{}",json_string);
@@ -649,12 +749,18 @@ pub async fn player_reports_sp(header_value:HeaderModel,from_date:String,to_date
 
 
 
-pub async fn result_sp(header_value:HeaderModel,date:String,game_group_id:i32)->Result<String,Box<dyn std::error::Error>>{
+pub async fn result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,date:String,game_group_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_ResultDetails'{}',{},'{}','{}','{}',{},'{}','{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,date,game_group_id);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
         let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
         let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
         let message:&str = res_value[0][0].get("Message").unwrap_or("null");
@@ -691,12 +797,18 @@ pub async fn result_sp(header_value:HeaderModel,date:String,game_group_id:i32)->
     }
 
 
-pub async fn password_change_sp(header_value:HeaderModel,old_password:String,new_password:String,flag:i32)->Result<String,Box<dyn std::error::Error>>{
+pub async fn password_change_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,old_password:String,new_password:String,flag:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_UPD_UpdatePassword '{}',{},'{}','{}','{}',{},'{}','{}','{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,old_password,new_password,flag);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
     let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
     let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
     let message:&str = res_value[0][0].get("Message").unwrap_or("null");
@@ -711,12 +823,18 @@ pub async fn password_change_sp(header_value:HeaderModel,old_password:String,new
 
 
 
-pub async fn ticket_info_sp(header_value:HeaderModel,transaction_id:String,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
+pub async fn ticket_info_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,transaction_id:String,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_TicketInfo  '{}',{},'{}','{}','{}',{},'{}','{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,transaction_id,type_id);
     println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
     let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
     let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
     let message:&str = res_value[0][0].get("Message").unwrap_or("null");
@@ -742,4 +860,32 @@ pub async fn ticket_info_sp(header_value:HeaderModel,transaction_id:String,type_
         println!("{}",json_string);
         return Ok(json_string);
     }
+    }
+
+
+
+pub async fn odds_config_scheme_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,game_group_id:i32)->Result<String,Box<dyn std::error::Error>>{
+    let mut client = db_connection().await?;
+    let qry = format!("EXEC CLI_GET_OddsConfigScheme '{}',{},'{}','{}','{}',{},'{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,game_group_id);
+    println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
+    let res = client.query(qry,&[]).await?;
+    let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
+    let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
+    let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
+    let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+    let info:&str = res_value[0][0].get("Info").unwrap_or("null");
+        let out_json = json!({
+            "TVN":tvn,
+            "Status_id":status_id,
+            "Message":message,
+            "Info":info
+        });
+        let json_string = serde_json::to_string(&out_json)?;
+        return Ok(json_string);
     }

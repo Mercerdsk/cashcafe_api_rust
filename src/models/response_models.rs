@@ -91,3 +91,15 @@ pub struct LastResultModel{
     pub draw_time:String,
     pub win_nods:String,
 }
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct PlayerReportsResponse{
+    pub from_date:String,
+    pub to_date:String,
+    pub bet_amount:String,
+    pub win_amount:String,
+    pub add_money:String,
+    pub withdraw_money:String,
+    pub bonus_amount:String,
+    pub net_amount:String,
+}

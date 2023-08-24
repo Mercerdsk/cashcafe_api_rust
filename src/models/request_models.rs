@@ -189,3 +189,9 @@ pub struct TicketInfoModel{
     pub transaction_id:String,
     pub type_id:i32,
 }
+
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct OddsConfigSchemeModel{
+    pub game_group_id:i32,
+}

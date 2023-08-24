@@ -419,7 +419,6 @@ dependencies = [
  "futures-util",
  "log",
  "log2",
- "openssl",
  "reqwest",
  "serde",
  "serde_json",

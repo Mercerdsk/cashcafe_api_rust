@@ -29,5 +29,6 @@ pub fn init_routes_v1(cfg: &mut web::ServiceConfig) {
     cfg.service(password_change_handler);
     cfg.service(captcha_verify_handler);
     cfg.service(ticket_info_handler);
+    cfg.service(get_odds_config_scheme_handler);
 
 }
