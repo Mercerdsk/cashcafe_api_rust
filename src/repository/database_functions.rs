@@ -654,7 +654,9 @@ pub async fn transaction_history_sp(IO_LOG:i32,req_stamp:f64,header_value:Header
                 draw_date_time:String::from(i.get("Draw_Date_Time").unwrap_or("")),
                 transaction_date_time:String::from(i.get("Transaction_Date_Time").unwrap_or("")),
                 amount:String::from(i.get("Amount").unwrap_or("")),
-                transaction_status:String::from(i.get("Status").unwrap_or(""))
+                transaction_status:String::from(i.get("Status").unwrap_or("")),
+                result:String::from(i.get("Result").unwrap_or("")),
+                game_name:String::from(i.get("GameName").unwrap_or("")),
                 
             };
             output_vec.push(out_json);
@@ -723,27 +725,26 @@ pub async fn player_reports_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
     }
     else {
         let mut json_array:Vec<PlayerReportsResponse>=Vec::new();
-        for i in &res_value[1]{
-            let out_json:PlayerReportsResponse=PlayerReportsResponse { from_date: String::from(i.get("FromDate").unwrap_or("")),
-                            to_date:String::from(i.get("ToDate").unwrap_or("")), 
-                            bet_amount:String::from(i.get("BetAmount").unwrap_or("")), 
-                            win_amount:String::from(i.get("WinAmount").unwrap_or("")), 
-                            add_money:String::from(i.get("Addmoney").unwrap_or("")), 
-                            withdraw_money:String::from(i.get("WithDraw").unwrap_or("")), 
-                            bonus_amount:String::from(i.get("BonusAmount").unwrap_or("")), 
-                            net_amount:String::from(i.get("NetAmount").unwrap_or("")) };
-            json_array.push(out_json);
+        if &res_value.len().to_string()=="1"{
+            let out ="[]".to_string();
+            return Ok(out);
         }
-        
-        let out_json = json!({
-            "TVN":tvn,
-            "Status_id":status_id,
-            "Message":message,
-            "Info":json_array
-        });
-        let json_string = serde_json::to_string(&out_json)?;
-        println!("{}",json_string);
-        return Ok(json_string);
+        else{
+            for i in &res_value[1]{
+                let out_json:PlayerReportsResponse=PlayerReportsResponse { from_date: String::from(i.get("FromDate").unwrap_or("")),
+                                to_date:String::from(i.get("ToDate").unwrap_or("")), 
+                                bet_amount:String::from(i.get("BetAmount").unwrap_or("")), 
+                                win_amount:String::from(i.get("WinAmount").unwrap_or("")), 
+                                add_money:String::from(i.get("Addmoney").unwrap_or("")), 
+                                withdraw_money:String::from(i.get("WithDraw").unwrap_or("")), 
+                                bonus_amount:String::from(i.get("BonusAmount").unwrap_or("")), 
+                                net_amount:String::from(i.get("NetAmount").unwrap_or("")) };
+                json_array.push(out_json);
+            }
+            let json_string = serde_json::to_string(&json_array)?;
+            println!("{}",json_string);
+            return Ok(json_string);
+        }
     }
     }
 

@@ -2,7 +2,7 @@ mod api;
 mod models;
 mod repository;
 mod logger;
-use actix_web::{web, App, HttpServer,http::header};
+use actix_web::{web, App, HttpServer,http::header,web::Data};
 use actix_cors::Cors;
 use crate::api::routes::*;
 use crate::models::request_models::GlobalConfigModel;
@@ -43,6 +43,7 @@ fn setup_logging() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[derive(Debug)]
 struct AppState {
     app_name: String,
 }

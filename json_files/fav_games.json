@@ -33,7 +33,7 @@
       "icon": "scratch.webp",
       "gameUrl":"/scratch",
       "favID":1,
-      "ggId":"59"
+      "ggId":" "
   },
   {
       "gameID": 6,
@@ -51,7 +51,7 @@
       "icon": "rapid-win.webp",
       "gameUrl":"/rapidwin",
       "favID":1,
-      "ggId":"41"
+      "ggId":" "
   },
   
   {

@@ -65,7 +65,9 @@ pub struct TransType1Model{
          pub draw_date_time:String,
          pub transaction_date_time:String,
          pub amount:String,
-         pub transaction_status:String
+         pub transaction_status:String,
+         pub result:String,
+         pub game_name:String,
         
 }
 
