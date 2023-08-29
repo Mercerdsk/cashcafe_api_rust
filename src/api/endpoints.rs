@@ -104,9 +104,9 @@ async fn player_login_handler(info:web::Json<PlayerLoginModel>,req:HttpRequest)-
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
-            if IO_LOG ==0{
-                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
-            }
+            // if IO_LOG ==0{
+            //     info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            // }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{

@@ -42,9 +42,9 @@ pub async fn player_login_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,p
     }
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
-    if IO_LOG ==0{
-        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
-    }
+    // if IO_LOG ==0{
+    //     info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    // }
         let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
         let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
         let message:&str = res_value[0][0].get("Message").unwrap_or("null");
