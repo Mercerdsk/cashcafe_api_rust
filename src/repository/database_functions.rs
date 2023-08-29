@@ -63,6 +63,8 @@ pub async fn player_login_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,p
             let session_id:&str=res_value[1][0].get(2).unwrap_or("");
             let user_name:&str=res_value[1][0].get(3).unwrap_or("");
             let date_time:&str=res_value[1][0].get(4).unwrap_or("");
+            let imageinfo:&str=res_value[1][0].get("ImageInfo").unwrap_or("");
+            let created_date:&str=res_value[1][0].get("CreateDate").unwrap_or("");
             let out_json = json!({
                 "TVN":tvn,
                 "Status_id":status_id,
@@ -71,7 +73,9 @@ pub async fn player_login_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,p
                 "Win_balance":win_balance,
                 "Session_id":session_id,
                 "User_name":user_name,
-                "Date_time":date_time
+                "Date_time":date_time,
+                "Imageinfo":imageinfo,
+                "Created_date":created_date,
             });
             let json_string = serde_json::to_string(&out_json)?;
             return Ok(json_string);
