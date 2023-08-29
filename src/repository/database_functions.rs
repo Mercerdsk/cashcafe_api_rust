@@ -894,3 +894,34 @@ pub async fn odds_config_scheme_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderM
         let json_string = serde_json::to_string(&out_json)?;
         return Ok(json_string);
     }
+
+
+pub async fn player_login_image_sp(header_value:HeaderModel)->Result<String,Box<dyn std::error::Error>>{
+    let mut client: tiberius::Client<tokio_util::compat::Compat<tokio::net::TcpStream>> = db_connection().await?;
+    let qry = format!("EXEC CLI_PlayerLoginImage '{}',{},'{}','{}','{}',{},'{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address);
+    let res = client.query(qry,&[]).await?;
+    let res_value=res.into_results().await?;
+        let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
+        let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
+        let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+        if status_id != '0'.to_string(){
+            let out_json = json!({
+                "TVN":tvn,
+                "Status_id":status_id,
+                "Message":message
+            });
+            let json_string = serde_json::to_string(&out_json)?;
+            return Ok(json_string);
+        }
+        else {
+            let imageinfo:&str=res_value[1][0].get("ImageInfo").unwrap_or("");
+            let out_json = json!({
+                "TVN":tvn,
+                "Status_id":status_id,
+                "Message":message,
+                "Imageinfo":imageinfo
+            });
+            let json_string = serde_json::to_string(&out_json)?;
+            return Ok(json_string);
+        }
+    }

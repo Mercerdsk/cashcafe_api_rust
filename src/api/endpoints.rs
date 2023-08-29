@@ -1131,3 +1131,34 @@ async fn get_odds_config_scheme_handler(info:web::Json<OddsConfigSchemeModel>,re
     }
     
 }
+
+
+#[post("/playerloginimage/")]
+async fn player_login_image_handler(req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+    let dt = Utc::now();
+    let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
+    let method = "player login image";
+    // request logger....
+    //Header Section
+    let header_value = header_extractor(req).await?;
+    // let user_id = req.headers().get("APIKEY").unwrap();
+    //Header Section
+    //IO Logging Section
+    //json body
+    let result = player_login_image_sp(header_value).await;
+    match result {
+        Ok(x)=>{
+            let j = format!("{{\"result\":{}}}",x);
+            let parsed: Value = serde_json::from_str(&j)?;
+            return Ok(web::Json(parsed));
+        }
+        Err(e) =>{
+            if ERROR_LOG ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
+            return Ok(web::Json(parsed)) 
+        }
+    }
+    
+}
