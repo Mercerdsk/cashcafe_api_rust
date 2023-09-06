@@ -1,6 +1,6 @@
 use serde::{Serialize,Deserialize};
 
-#[derive(Serialize,Deserialize,Debug)]
+#[derive(Serialize,Deserialize,Debug,Clone)]
 pub struct GlobalConfigModel{
     pub db_host:String,
     pub db_port:u16,

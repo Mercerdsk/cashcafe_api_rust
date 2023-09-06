@@ -55,22 +55,24 @@ async fn main() -> std::io::Result<()> {
     println!("-------------------Reading config file --------------------");
     let json_file_path= Path::new("./json_files/database_config.json");
     let file = File::open(json_file_path)?;
-    let games:GlobalConfigModel=serde_json::from_reader(file)?;
-    let toggle_log = games.toggle_log;
-    let api_port = games.api_port;
+    let web_config:GlobalConfigModel=serde_json::from_reader(file)?;
+    let toggle_log = web_config.toggle_log;
+    let api_port = web_config.api_port;
 
     if toggle_log==0{
         setup_logging().expect("failed to initialize logging.");
+        println!("file logging activated");
     }
     else {
         env_logger::init_from_env(Env::default().default_filter_or("debug"));
+        println!("console logging activated");
     }
     //  let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
     // builder
     //     .set_private_key_file("/home/sasikumar/Analytics_RND/rust_files/cashcafe_api/src/certicficates/key.key", SslFiletype::PEM)
     //     .unwrap();
     // builder.set_certificate_chain_file("/home/sasikumar/Analytics_RND/rust_files/cashcafe_api/src/certicficates/cert.crt").unwrap();
-    HttpServer::new(|| {
+    HttpServer::new(move|| {
         // let cors = Cors::default().allow_any_origin().send_wildcard();
         let cors = Cors::permissive()
             .allowed_methods(vec!["GET", "POST","OPTIONS"])
@@ -81,9 +83,7 @@ async fn main() -> std::io::Result<()> {
             // ])
             .supports_credentials();
         App::new()
-            .app_data(web::Data::new(AppState {
-                app_name: String::from("Actix Web"),
-            }))
+            .app_data(web::Data::new(web_config.clone()))
         .wrap(cors)
         .wrap(Logger::default())
         .service(web::scope("/v1").configure(init_routes_v1))

@@ -19,9 +19,9 @@ pub async fn player_creation_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderMode
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-        let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-        let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("");
-        let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+        let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("");
+        let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
         let out_json = PlayerCreationResponse{
             TVN:String::from(tvn),
             Status_id:String::from(status_id),
@@ -45,9 +45,9 @@ pub async fn player_login_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,p
     // if IO_LOG ==0{
     //     info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     // }
-        let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
-        let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-        let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+        let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
         if status_id != '0'.to_string(){
             let out_json = json!({
                 "TVN":tvn,
@@ -58,13 +58,15 @@ pub async fn player_login_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,p
             return Ok(json_string);
         }
         else {
-            let balance:&str=res_value[1][0].get(0).unwrap_or("");
-            let win_balance:&str=res_value[1][0].get(1).unwrap_or("");
-            let session_id:&str=res_value[1][0].get(2).unwrap_or("");
-            let user_name:&str=res_value[1][0].get(3).unwrap_or("");
-            let date_time:&str=res_value[1][0].get(4).unwrap_or("");
-            let imageinfo:&str=res_value[1][0].get("ImageInfo").unwrap_or("");
-            let created_date:&str=res_value[1][0].get("CreateDate").unwrap_or("");
+            let balance:&str=res_value[1][0].try_get("Balance")?.unwrap_or("");
+            let win_balance:&str=res_value[1][0].try_get("Win_Balance")?.unwrap_or("");
+            let session_id:&str=res_value[1][0].try_get("Session_Id")?.unwrap_or("");
+            let user_name:&str=res_value[1][0].try_get("User_Name")?.unwrap_or("");
+            let date_time:&str=res_value[1][0].try_get("Date_Time")?.unwrap_or("");
+            let imageinfo:&str=res_value[1][0].try_get("ImageInfo")?.unwrap_or("");
+            let created_date:&str=res_value[1][0].try_get("CreateDate")?.unwrap_or("");
+            let timeout_seconds:&str=res_value[1][0].try_get("TimoutSeconds")?.unwrap_or("");
+            // let player_name:&str=res_value[1][0].try_get("PlayerName")?.unwrap_or("");
             let out_json = json!({
                 "TVN":tvn,
                 "Status_id":status_id,
@@ -76,6 +78,7 @@ pub async fn player_login_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,p
                 "Date_time":date_time,
                 "Imageinfo":imageinfo,
                 "Created_date":created_date,
+                "timeout_seconds":timeout_seconds
             });
             let json_string = serde_json::to_string(&out_json)?;
             return Ok(json_string);
@@ -94,9 +97,9 @@ pub async fn get_balance_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel)->
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-        let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
-        let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-        let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+        let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
         if status_id != '0'.to_string(){
             let out_json = json!({
                 "TVN":tvn,
@@ -107,9 +110,9 @@ pub async fn get_balance_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel)->
             return Ok(json_string);
         }
         else {
-            let balance:i64=res_value[1][0].get(0).unwrap_or(0);
-            let win_balance:i64=res_value[1][0].get(1).unwrap_or(0);
-            let date_time:&str=res_value[1][0].get(2).unwrap_or("");
+            let balance:i64=res_value[1][0].try_get(0)?.unwrap_or(0);
+            let win_balance:i64=res_value[1][0].try_get(1)?.unwrap_or(0);
+            let date_time:&str=res_value[1][0].try_get(2)?.unwrap_or("");
             let out_json = json!({
                 "TVN":tvn,
                 "Status_id":status_id,
@@ -136,10 +139,10 @@ pub async fn available_games_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderMode
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-        let status_id:&str = res_value[0][0].get(1).unwrap_or("null");
-        let tvn:&str = res_value[0][0].get(0).unwrap_or("null");
-        let message:&str = res_value[0][0].get(2).unwrap_or("null");
-        let date_time:&str = res_value[0][0].get(3).unwrap_or("null");
+        let status_id:&str = res_value[0][0].try_get(1)?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get(0)?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get(2)?.unwrap_or("null");
+        let date_time:&str = res_value[0][0].try_get(3)?.unwrap_or("null");
         let mut out_put:Vec<AvailableGamesTable> = Vec::new();
         if status_id != '0'.to_string(){
             let out_json = json!({
@@ -152,18 +155,18 @@ pub async fn available_games_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderMode
         }
         else {
             for i in &res_value[1]{
-                let out_struct:AvailableGamesTable= AvailableGamesTable { reflot_id:String::from(i.get(0).unwrap_or("null")),
-                    group_id: String::from(i.get(1).unwrap_or("null")),
-                    group_name: String::from(i.get(2).unwrap_or("null")),
-                    game_name: String::from(i.get(3).unwrap_or("null")),
-                    draw_date: String::from(i.get(4).unwrap_or("null")), 
-                    draw_time: String::from(i.get(5).unwrap_or("null")), 
-                    close_time: String::from(i.get(6).unwrap_or("null")), 
-                    interval:String::from(i.get(7).unwrap_or("null")),
-                    end_time:String::from(i.get(8).unwrap_or("null")),
-                    min_max_multi:String::from(i.get(9).unwrap_or("null")),
-                    odds:String::from(i.get(10).unwrap_or("null")),
-                    no_of_balls:String::from(i.get(11).unwrap_or("null")),
+                let out_struct:AvailableGamesTable= AvailableGamesTable { reflot_id:String::from(i.try_get(0)?.unwrap_or("null")),
+                    group_id: String::from(i.try_get(1)?.unwrap_or("null")),
+                    group_name: String::from(i.try_get(2)?.unwrap_or("null")),
+                    game_name: String::from(i.try_get(3)?.unwrap_or("null")),
+                    draw_date: String::from(i.try_get(4)?.unwrap_or("null")), 
+                    draw_time: String::from(i.try_get(5)?.unwrap_or("null")), 
+                    close_time: String::from(i.try_get(6)?.unwrap_or("null")), 
+                    interval:String::from(i.try_get(7)?.unwrap_or("null")),
+                    end_time:String::from(i.try_get(8)?.unwrap_or("null")),
+                    min_max_multi:String::from(i.try_get(9)?.unwrap_or("null")),
+                    odds:String::from(i.try_get(10)?.unwrap_or("null")),
+                    no_of_balls:String::from(i.try_get(11)?.unwrap_or("null")),
                 };
                 out_put.push(out_struct);
             }
@@ -195,9 +198,9 @@ pub async fn payment_init_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,a
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-        let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
-        let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-        let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+        let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
         if status_id != '0'.to_string(){
             let out_json = json!({
                 "TVN":tvn,
@@ -208,9 +211,9 @@ pub async fn payment_init_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,a
             return Ok(json_string);
         }
         else {
-            let pg_ref_id:&str=res_value[1][0].get(0).unwrap_or("");
-            let callback_url:&str=res_value[1][0].get(1).unwrap_or("");
-            let date_time:&str=res_value[1][0].get(2).unwrap_or("");
+            let pg_ref_id:&str=res_value[1][0].try_get(0)?.unwrap_or("");
+            let callback_url:&str=res_value[1][0].try_get(1)?.unwrap_or("");
+            let date_time:&str=res_value[1][0].try_get(2)?.unwrap_or("");
             let out_json = json!({
                 "TVN":tvn,
                 "Status_id":status_id,
@@ -237,9 +240,9 @@ pub async fn add_money_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-        let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
-        let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-        let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+        let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
         if status_id != '0'.to_string(){
             let out_json = json!({
                 "TVN":tvn,
@@ -250,10 +253,10 @@ pub async fn add_money_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type
             return Ok(json_string);
         }
         else {
-            let pg_txn_id:&str=res_value[1][0].get(0).unwrap_or("");
-            let balance:i64=res_value[1][0].get(1).unwrap_or(0);
-            let win_balance:i64=res_value[1][0].get(2).unwrap_or(0);
-            let date_time:&str=res_value[1][0].get(3).unwrap_or("");
+            let pg_txn_id:&str=res_value[1][0].try_get(0)?.unwrap_or("");
+            let balance:i64=res_value[1][0].try_get(1)?.unwrap_or(0);
+            let win_balance:i64=res_value[1][0].try_get(2)?.unwrap_or(0);
+            let date_time:&str=res_value[1][0].try_get(3)?.unwrap_or("");
             let out_json = json!({
                 "TVN":tvn,
                 "Status_id":status_id,
@@ -282,9 +285,9 @@ pub async fn withdraw_money_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-        let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
-        let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-        let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+        let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
         if status_id != '0'.to_string(){
             let out_json = json!({
                 "TVN":tvn,
@@ -295,10 +298,10 @@ pub async fn withdraw_money_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
             return Ok(json_string);
         }
         else {
-            let pg_txn_id:&str=res_value[1][0].get(0).unwrap_or("");
-            let balance:i64=res_value[1][0].get(1).unwrap_or(0);
-            let win_balance:i64=res_value[1][0].get(2).unwrap_or(0);
-            let date_time:&str=res_value[1][0].get(3).unwrap_or("");
+            let pg_txn_id:&str=res_value[1][0].try_get(0)?.unwrap_or("");
+            let balance:i64=res_value[1][0].try_get(1)?.unwrap_or(0);
+            let win_balance:i64=res_value[1][0].try_get(2)?.unwrap_or(0);
+            let date_time:&str=res_value[1][0].try_get(3)?.unwrap_or("");
             let out_json = json!({
                 "TVN":tvn,
                 "Status_id":status_id,
@@ -326,9 +329,9 @@ pub async fn otp_validation_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-        let status_id:&str = res_value[0][0].get(1).unwrap_or("null");
-        let tvn:&str = res_value[0][0].get(0).unwrap_or("null");
-        let message:&str = res_value[0][0].get(2).unwrap_or("null");
+        let status_id:&str = res_value[0][0].try_get(1)?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get(0)?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get(2)?.unwrap_or("null");
         let out_json = json!({
             "TVN":tvn,
             "Status_id":status_id,
@@ -351,9 +354,9 @@ pub async fn otp_generation_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-        let status_id:&str = res_value[0][0].get(1).unwrap_or("null");
-        let tvn:&str = res_value[0][0].get(0).unwrap_or("null");
-        let message:&str = res_value[0][0].get(2).unwrap_or("null");
+        let status_id:&str = res_value[0][0].try_get(1)?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get(0)?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get(2)?.unwrap_or("null");
         let out_json = json!({
             "TVN":tvn,
             "Status_id":status_id,
@@ -375,7 +378,7 @@ pub async fn get_server_time_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderMode
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-        let date_time:&str = res_value[0][0].get(0).unwrap_or("null");
+        let date_time:&str = res_value[0][0].try_get(0)?.unwrap_or("null");
         let out_json = json!({
             "Status_id":"0",
             "Date_time":date_time
@@ -397,9 +400,9 @@ pub async fn get_player_profile_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderM
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-        let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
-        let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-        let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+        let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
         if status_id != '0'.to_string(){
             let out_json = json!({
                 "TVN":tvn,
@@ -410,13 +413,13 @@ pub async fn get_player_profile_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderM
             return Ok(json_string);
         }
         else {
-            let player_image:&str=res_value[1][0].get("PlayerImage").unwrap_or("");
-            let phone_no:&str=res_value[1][0].get("PhoneNo").unwrap_or("");
-            let player_name:&str=res_value[1][0].get("PlayerName").unwrap_or("");
-            let email:&str=res_value[1][0].get("EMAIL").unwrap_or("");
-            let kyc_no:&str=res_value[1][0].get("KYCNo").unwrap_or("");
-            let dob:&str=res_value[1][0].get("DOB").unwrap_or("");
-            let kyc_status:i32 = res_value[1][0].get("Status").unwrap_or(0);
+            let player_image:&str=res_value[1][0].try_get("PlayerImage")?.unwrap_or("");
+            let phone_no:&str=res_value[1][0].try_get("PhoneNo")?.unwrap_or("");
+            let player_name:&str=res_value[1][0].try_get("PlayerName")?.unwrap_or("");
+            let email:&str=res_value[1][0].try_get("EMAIL")?.unwrap_or("");
+            let kyc_no:&str=res_value[1][0].try_get("KYCNo")?.unwrap_or("");
+            let dob:&str=res_value[1][0].try_get("DOB")?.unwrap_or("");
+            let kyc_status:i32 = res_value[1][0].try_get("Status")?.unwrap_or(0);
             let out_json = json!({
                 "TVN":tvn,
                 "Status_id":status_id,
@@ -448,9 +451,9 @@ pub async fn update_player_profile_sp(IO_LOG:i32,req_stamp:f64,header_value:Head
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-        let status_id:&str = res_value[0][0].get(1).unwrap_or("null");
-        let tvn:&str = res_value[0][0].get(0).unwrap_or("null");
-        let message:&str = res_value[0][0].get(2).unwrap_or("null");
+        let status_id:&str = res_value[0][0].try_get(1)?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get(0)?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get(2)?.unwrap_or("null");
         let out_json = json!({
             "TVN":tvn,
             "Status_id":status_id,
@@ -473,9 +476,9 @@ pub async fn buy_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,reflotid:i
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-        let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
-        let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-        let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+        let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
         if status_id != '0'.to_string(){
             let out_json = json!({
                 "TVN":tvn,
@@ -486,12 +489,12 @@ pub async fn buy_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,reflotid:i
             return Ok(json_string);
         }
         else {
-            let client_trans_id:&str=res_value[1][0].get("Client_TransId").unwrap_or("");
-            let trans_id:&str=res_value[1][0].get("TransId").unwrap_or("");
-            let print_info:&str=res_value[1][0].get("PrintInfo").unwrap_or("");
-            let date_time:&str=res_value[1][0].get("Date_Time").unwrap_or("");
-            let balance:&str=res_value[1][0].get("Balance").unwrap_or("null");
-            let win_balance:&str=res_value[1][0].get("Win_Balance").unwrap_or("null");
+            let client_trans_id:&str=res_value[1][0].try_get("Client_TransId")?.unwrap_or("");
+            let trans_id:&str=res_value[1][0].try_get("TransId")?.unwrap_or("");
+            let print_info:&str=res_value[1][0].try_get("PrintInfo")?.unwrap_or("");
+            let date_time:&str=res_value[1][0].try_get("Date_Time")?.unwrap_or("");
+            let balance:&str=res_value[1][0].try_get("Balance")?.unwrap_or("null");
+            let win_balance:&str=res_value[1][0].try_get("Win_Balance")?.unwrap_or("null");
             
             let out_json = json!({
                 "TVN":tvn,
@@ -523,9 +526,9 @@ pub async fn kyc_verification_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderMod
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-        let status_id:&str = res_value[0][0].get(1).unwrap_or("null");
-        let tvn:&str = res_value[0][0].get(0).unwrap_or("null");
-        let message:&str = res_value[0][0].get(2).unwrap_or("null");
+        let status_id:&str = res_value[0][0].try_get(1)?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get(0)?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get(2)?.unwrap_or("null");
         let out_json = json!({
             "TVN":tvn,
             "Status_id":status_id,
@@ -547,9 +550,9 @@ pub async fn get_current_result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderM
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-    let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
-    let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-    let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+    let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+    let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+    let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
     if status_id != '0'.to_string(){
         let out_json = json!({
             "TVN":tvn,
@@ -560,10 +563,10 @@ pub async fn get_current_result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderM
         return Ok(json_string);
     }
     else {
-        let draw_no :&str=res_value[1][0].get("DrawNo").unwrap_or("");
-        let draw_date :&str=res_value[1][0].get("DrawDate").unwrap_or("");
-        let draw_time :&str=res_value[1][0].get("DrawTime").unwrap_or("");
-        let win_nods :&str=res_value[1][0].get("WinNos").unwrap_or("");
+        let draw_no :&str=res_value[1][0].try_get("DrawNo")?.unwrap_or("");
+        let draw_date :&str=res_value[1][0].try_get("DrawDate")?.unwrap_or("");
+        let draw_time :&str=res_value[1][0].try_get("DrawTime")?.unwrap_or("");
+        let win_nods :&str=res_value[1][0].try_get("WinNos")?.unwrap_or("");
         
         
         
@@ -595,9 +598,9 @@ pub async fn get_previous_result_sp(IO_LOG:i32,req_stamp:f64,header_value:Header
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-    let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
-    let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-    let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+    let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+    let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+    let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
     let mut out_json:Vec<LastResultModel> = Vec::new();
     if status_id != '0'.to_string(){
         let out_json = json!({
@@ -611,10 +614,10 @@ pub async fn get_previous_result_sp(IO_LOG:i32,req_stamp:f64,header_value:Header
     else {
             for i in &res_value[1]{
                 let out=LastResultModel{
-                    draw_no:String::from(i.get("DrawNo").unwrap_or("")),
-                    draw_date:String::from(i.get("DrawDate").unwrap_or("")),
-                    draw_time:String::from(i.get("DrawTime").unwrap_or("")),
-                    win_nods:String::from(i.get("WinNos").unwrap_or(""))
+                    draw_no:String::from(i.try_get("DrawNo")?.unwrap_or("")),
+                    draw_date:String::from(i.try_get("DrawDate")?.unwrap_or("")),
+                    draw_time:String::from(i.try_get("DrawTime")?.unwrap_or("")),
+                    win_nods:String::from(i.try_get("WinNos")?.unwrap_or(""))
                 };
                 out_json.push(out);
             }    
@@ -637,9 +640,9 @@ pub async fn transaction_history_sp(IO_LOG:i32,req_stamp:f64,header_value:Header
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-    let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
-    let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-    let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+    let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+    let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+    let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
     if status_id != '0'.to_string(){
         let out_json = json!({
             "TVN":tvn,
@@ -654,13 +657,13 @@ pub async fn transaction_history_sp(IO_LOG:i32,req_stamp:f64,header_value:Header
         if type_id==1{
             for i in &res_value[1]{
             let out_json:TransType1Model= TransType1Model{
-                transaction_id:String::from(i.get("Transaction_ID").unwrap_or("")),
-                draw_date_time:String::from(i.get("Draw_Date_Time").unwrap_or("")),
-                transaction_date_time:String::from(i.get("Transaction_Date_Time").unwrap_or("")),
-                amount:String::from(i.get("Amount").unwrap_or("")),
-                transaction_status:String::from(i.get("Status").unwrap_or("")),
-                result:String::from(i.get("Result").unwrap_or("")),
-                game_name:String::from(i.get("GameName").unwrap_or("")),
+                transaction_id:String::from(i.try_get("Transaction_ID")?.unwrap_or("")),
+                draw_date_time:String::from(i.try_get("Draw_Date_Time")?.unwrap_or("")),
+                transaction_date_time:String::from(i.try_get("Transaction_Date_Time")?.unwrap_or("")),
+                amount:String::from(i.try_get("Amount")?.unwrap_or("")),
+                transaction_status:String::from(i.try_get("Status")?.unwrap_or("")),
+                result:String::from(i.try_get("Result")?.unwrap_or("")),
+                game_name:String::from(i.try_get("GameName")?.unwrap_or("")),
                 
             };
             output_vec.push(out_json);
@@ -674,10 +677,10 @@ pub async fn transaction_history_sp(IO_LOG:i32,req_stamp:f64,header_value:Header
             let mut output_vec:Vec<TransType23Model> = Vec::new();
             for i in &res_value[1]{
                 let out_json:TransType23Model= TransType23Model{
-                    transaction_id:String::from(i.get("Transaction_ID").unwrap_or("")),
-                    transaction_date_time:String::from(i.get("Transaction_Date_Time").unwrap_or("")),
-                    amount:String::from(i.get("Amount").unwrap_or("")),
-                    transaction_status:String::from(i.get("Status").unwrap_or(""))
+                    transaction_id:String::from(i.try_get("Transaction_ID")?.unwrap_or("")),
+                    transaction_date_time:String::from(i.try_get("Transaction_Date_Time")?.unwrap_or("")),
+                    amount:String::from(i.try_get("Amount")?.unwrap_or("")),
+                    transaction_status:String::from(i.try_get("Status")?.unwrap_or(""))
                     
                 };
                 output_vec.push(out_json);
@@ -714,9 +717,9 @@ pub async fn player_reports_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-    let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
-    let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-    let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+    let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+    let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+    let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
     
     if status_id != '0'.to_string(){
         let out_json = json!({
@@ -735,14 +738,14 @@ pub async fn player_reports_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
         }
         else{
             for i in &res_value[1]{
-                let out_json:PlayerReportsResponse=PlayerReportsResponse { from_date: String::from(i.get("FromDate").unwrap_or("")),
-                                to_date:String::from(i.get("ToDate").unwrap_or("")), 
-                                bet_amount:String::from(i.get("BetAmount").unwrap_or("")), 
-                                win_amount:String::from(i.get("WinAmount").unwrap_or("")), 
-                                add_money:String::from(i.get("Addmoney").unwrap_or("")), 
-                                withdraw_money:String::from(i.get("WithDraw").unwrap_or("")), 
-                                bonus_amount:String::from(i.get("BonusAmount").unwrap_or("")), 
-                                net_amount:String::from(i.get("NetAmount").unwrap_or("")) };
+                let out_json:PlayerReportsResponse=PlayerReportsResponse { from_date: String::from(i.try_get("FromDate")?.unwrap_or("")),
+                                to_date:String::from(i.try_get("ToDate")?.unwrap_or("")), 
+                                bet_amount:String::from(i.try_get("BetAmount")?.unwrap_or("")), 
+                                win_amount:String::from(i.try_get("WinAmount")?.unwrap_or("")), 
+                                add_money:String::from(i.try_get("Addmoney")?.unwrap_or("")), 
+                                withdraw_money:String::from(i.try_get("WithDraw")?.unwrap_or("")), 
+                                bonus_amount:String::from(i.try_get("BonusAmount")?.unwrap_or("")), 
+                                net_amount:String::from(i.try_get("NetAmount")?.unwrap_or("")) };
                 json_array.push(out_json);
             }
             let json_string = serde_json::to_string(&json_array)?;
@@ -766,9 +769,9 @@ pub async fn result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,date:St
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-        let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
-        let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-        let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+        let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
         let mut out_put:Vec<ResultTableModel> = Vec::new();
         if status_id != '0'.to_string(){
             let out_json = json!({
@@ -781,9 +784,9 @@ pub async fn result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,date:St
         }
         else {
             for i in &res_value[1]{
-                let out_struct:ResultTableModel= ResultTableModel { game_name:String::from(i.get("GameName").unwrap_or("null")),
-                    draw_date: String::from(i.get("DrawDate").unwrap_or("null")),
-                    result: String::from(i.get("Result").unwrap_or("null")),
+                let out_struct:ResultTableModel= ResultTableModel { game_name:String::from(i.try_get("GameName")?.unwrap_or("null")),
+                    draw_date: String::from(i.try_get("DrawDate")?.unwrap_or("null")),
+                    result: String::from(i.try_get("Result")?.unwrap_or("null")),
                 };
                 out_put.push(out_struct);
             }
@@ -814,9 +817,9 @@ pub async fn password_change_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderMode
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-    let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
-    let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-    let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+    let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+    let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+    let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
         let out_json = json!({
             "TVN":tvn,
             "Status_id":status_id,
@@ -840,9 +843,9 @@ pub async fn ticket_info_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,tr
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-    let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
-    let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-    let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+    let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+    let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+    let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
     if status_id != '0'.to_string(){
         let out_json = json!({
             "TVN":tvn,
@@ -853,7 +856,7 @@ pub async fn ticket_info_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,tr
         return Ok(json_string);
     }
     else {
-        let ticket_info :&str=res_value[1][0].get("TicketInfo").unwrap_or("");
+        let ticket_info :&str=res_value[1][0].try_get("TicketInfo")?.unwrap_or("");
         
         let out_json = json!({
             "TVN":tvn,
@@ -881,10 +884,10 @@ pub async fn odds_config_scheme_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderM
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-    let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
-    let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-    let message:&str = res_value[0][0].get("Message").unwrap_or("null");
-    let info:&str = res_value[0][0].get("Info").unwrap_or("null");
+    let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+    let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+    let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
+    let info:&str = res_value[0][0].try_get("Info")?.unwrap_or("null");
         let out_json = json!({
             "TVN":tvn,
             "Status_id":status_id,
@@ -901,9 +904,9 @@ pub async fn player_login_image_sp(header_value:HeaderModel)->Result<String,Box<
     let qry = format!("EXEC CLI_PlayerLoginImage '{}',{},'{}','{}','{}',{},'{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address);
     let res = client.query(qry,&[]).await?;
     let res_value=res.into_results().await?;
-        let status_id:&str = res_value[0][0].get("Status_Id").unwrap_or("null");
-        let tvn:&str = res_value[0][0].get("TVN").unwrap_or("null");
-        let message:&str = res_value[0][0].get("Message").unwrap_or("null");
+        let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
         if status_id != '0'.to_string(){
             let out_json = json!({
                 "TVN":tvn,
@@ -914,7 +917,7 @@ pub async fn player_login_image_sp(header_value:HeaderModel)->Result<String,Box<
             return Ok(json_string);
         }
         else {
-            let imageinfo:&str=res_value[1][0].get("ImageInfo").unwrap_or("");
+            let imageinfo:&str=res_value[1][0].try_get("ImageInfo")?.unwrap_or("");
             let out_json = json!({
                 "TVN":tvn,
                 "Status_id":status_id,
