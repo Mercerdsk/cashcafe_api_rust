@@ -66,7 +66,7 @@ pub async fn player_login_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,p
             let imageinfo:&str=res_value[1][0].try_get("ImageInfo")?.unwrap_or("");
             let created_date:&str=res_value[1][0].try_get("CreateDate")?.unwrap_or("");
             let timeout_seconds:&str=res_value[1][0].try_get("TimoutSeconds")?.unwrap_or("");
-            // let player_name:&str=res_value[1][0].try_get("PlayerName")?.unwrap_or("");
+            let player_name:&str=res_value[1][0].try_get("playername")?.unwrap_or("");
             let out_json = json!({
                 "TVN":tvn,
                 "Status_id":status_id,
@@ -78,6 +78,7 @@ pub async fn player_login_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,p
                 "Date_time":date_time,
                 "Imageinfo":imageinfo,
                 "Created_date":created_date,
+                "player_name":player_name,
                 "timeout_seconds":timeout_seconds
             });
             let json_string = serde_json::to_string(&out_json)?;
