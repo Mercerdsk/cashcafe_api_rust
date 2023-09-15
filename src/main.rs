@@ -37,7 +37,7 @@ fn setup_logging() -> Result<(), Box<dyn std::error::Error>> {
         .level(log::LevelFilter::Debug)
         .level_for("tiberius", log::LevelFilter::Off)
         .level_for("actix_web", log::LevelFilter::Off)
-        .chain(fern::DateBased::new(path, "%Y-%m-%d--api.log"))
+        .chain(fern::DateBased::new(path, "%Y-%m-%d-hour-%H-api.log"))
         .apply()?;
 
     Ok(())
