@@ -791,15 +791,6 @@ pub async fn result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,date:St
                 };
                 out_put.push(out_struct);
             }
-            
-            // let out_json = json!({
-            //     "TVN":tvn,
-            //     "Status_id":status_id,
-            //     "Message":message,
-            //     "Balance":balance,
-            //     "Win_balance":win_balance,
-            //     "Date_time":date_time
-            // });
             let json_string = serde_json::to_string(&out_put)?;
             return Ok(json_string);
         }
@@ -928,4 +919,51 @@ pub async fn player_login_image_sp(header_value:HeaderModel)->Result<String,Box<
             let json_string = serde_json::to_string(&out_json)?;
             return Ok(json_string);
         }
+    }
+
+
+
+pub async fn get_game_wise_bet_info_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,game_group_id:i32,date_time:String)->Result<String,Box<dyn std::error::Error>>{
+    let mut client = db_connection().await?;
+    let qry = format!("EXEC CLI_GET_GameWiseBetInfo  '{}',{},'{}','{}','{}',{},'{}',{},'{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,game_group_id,date_time);
+    println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
+    let res = client.query(qry,&[]).await?;
+    let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
+    let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+    let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+    let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
+    
+    if status_id != '0'.to_string(){
+        let out_json = json!({
+            "TVN":tvn,
+            "Status_id":status_id,
+            "Message":message
+        });
+        let json_string = serde_json::to_string(&out_json)?;
+        return Ok(json_string);
+    }
+    else {
+        let mut json_array:Vec<GetGamewiseBetInfoResponse>=Vec::new();
+        if &res_value.len().to_string()=="1"{
+            let out ="[]".to_string();
+            return Ok(out);
+        }
+        else{
+            for i in &res_value[1]{
+                let out_json:GetGamewiseBetInfoResponse=GetGamewiseBetInfoResponse { 
+                    bet_amount: String::from(i.try_get("BetAmount")?.unwrap_or("")),
+                    bet_info:String::from(i.try_get("BetInfo")?.unwrap_or(""))};
+                json_array.push(out_json);
+            }
+            let json_string = serde_json::to_string(&json_array)?;
+            println!("{}",json_string);
+            return Ok(json_string);
+        }
+    }
     }

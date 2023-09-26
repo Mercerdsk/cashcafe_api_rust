@@ -194,3 +194,10 @@ pub struct TicketInfoModel{
 pub struct OddsConfigSchemeModel{
     pub game_group_id:i32,
 }
+
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct GameWiseBetinfoModel{
+    pub game_group_id:i32,
+    pub datetime:String,
+}

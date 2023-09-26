@@ -31,5 +31,6 @@ pub fn init_routes_v1(cfg: &mut web::ServiceConfig) {
     cfg.service(ticket_info_handler);
     cfg.service(get_odds_config_scheme_handler);
     cfg.service(player_login_image_handler);
+    cfg.service(get_game_wise_bet_info_handler);
 
 }
