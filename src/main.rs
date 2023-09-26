@@ -6,6 +6,7 @@ use actix_web::{web, App, HttpServer,http::header,web::Data};
 use actix_cors::Cors;
 use crate::api::routes::*;
 use crate::models::request_models::GlobalConfigModel;
+use crate::api::endpoints::get_version_handler;
 use fern;
 use chrono::Utc;
 use actix_web::middleware::Logger;
@@ -86,6 +87,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(web_config.clone()))
         .wrap(cors)
         .wrap(Logger::default())
+        .service(get_version_handler)
         .service(web::scope("/v1").configure(init_routes_v1))
     })
     .bind(("0.0.0.0", api_port))?
