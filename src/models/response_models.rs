@@ -105,7 +105,15 @@ pub struct PlayerReportsResponse{
     pub bonus_amount:String,
     pub net_amount:String,
 }
-
+#[derive(Serialize,Deserialize,Debug)]
+pub struct PlayerActivityResponse{
+    pub transaction_id:String,
+    pub type_desc:String,
+    pub trans_date_time:String,
+    pub opening_balance:String,
+    pub amount:String,
+    pub closing_balance:String,
+}
 
 #[derive(Serialize,Deserialize,Debug)]
 pub struct GetGamewiseBetInfoResponse{
