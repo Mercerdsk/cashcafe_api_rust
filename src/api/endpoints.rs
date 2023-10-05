@@ -18,7 +18,7 @@ use reqwest::Client;
 #[get("/get_version/")]
 async fn get_version_handler(req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     
-    let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":0,\"Version\":\"Version : 1.0\"}}")?;
+    let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":0,\"Version\":\"Version : 1.0.1\"}}")?;
     return Ok(web::Json(parsed)) 
     
 }
