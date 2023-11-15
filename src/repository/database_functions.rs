@@ -665,6 +665,7 @@ pub async fn transaction_history_sp(IO_LOG:i32,req_stamp:f64,header_value:Header
                 transaction_date_time:String::from(i.try_get("Transaction_Date_Time")?.unwrap_or("")),
                 amount:String::from(i.try_get("Amount")?.unwrap_or("")),
                 transaction_status:String::from(i.try_get("Status")?.unwrap_or("")),
+                win_amount:String::from(i.try_get("WinAmount")?.unwrap_or("")),
                 result:String::from(i.try_get("Result")?.unwrap_or("")),
                 game_name:String::from(i.try_get("GameName")?.unwrap_or("")),
                 

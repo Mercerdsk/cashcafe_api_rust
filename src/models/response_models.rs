@@ -68,6 +68,7 @@ pub struct TransType1Model{
          pub transaction_status:String,
          pub result:String,
          pub game_name:String,
+         pub win_amount:String,
         
 }
 
