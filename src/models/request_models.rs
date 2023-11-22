@@ -135,6 +135,7 @@ pub struct KycVerifyModel{
     pub id_no:String,
     pub address:String,
     pub proof:String,
+    pub proof2:String,
 }
 
 #[derive(Serialize,Deserialize,Debug)]
@@ -200,4 +201,16 @@ pub struct OddsConfigSchemeModel{
 pub struct GameWiseBetinfoModel{
     pub game_group_id:i32,
     pub datetime:String,
+}
+
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct AvailableRaceModel{
+    pub game_group_id:i32,
+}
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct RaceDetailsModel{
+    pub race_id:i32,
+    pub game_group_id:i32,
 }

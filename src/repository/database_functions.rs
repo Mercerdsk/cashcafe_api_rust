@@ -517,9 +517,9 @@ pub async fn buy_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,reflotid:i
     }
 
 
-pub async fn kyc_verification_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type_id:i32,player_name:String,dob:String,nationality:String,id_type:String,id_no:String,address:String,proof:String)->Result<String,Box<dyn std::error::Error>>{
+pub async fn kyc_verification_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type_id:i32,player_name:String,dob:String,nationality:String,id_type:String,id_no:String,address:String,proof:String,proof2:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
-    let qry = format!("EXEC CLI_GET_KYCVerifiCation '{}',{},'{}','{}','{}',{},'{}','{}','{}','{}','{}','{}','{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id,player_name,dob,nationality,id_type,id_no,address,proof);
+    let qry = format!("EXEC CLI_GET_KYCVerifiCation '{}',{},'{}','{}','{}',{},'{}','{}','{}','{}','{}','{}','{}','{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id,player_name,dob,nationality,id_type,id_no,address,proof,proof2);
     println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
@@ -992,4 +992,149 @@ pub async fn get_game_wise_bet_info_sp(IO_LOG:i32,req_stamp:f64,header_value:Hea
             return Ok(json_string);
         }
     }
+    }
+
+
+
+pub async fn get_available_race_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,game_group_id:i32)->Result<String,Box<dyn std::error::Error>>{
+    let mut client = db_connection().await?;
+    let qry = format!("EXEC CLI_GET_AvailableRace '{}',{},'{}','{}','{}',{},'{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,game_group_id);
+    println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
+    let res = client.query(qry,&[]).await?;
+    let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
+        let status_id:&str = res_value[0][0].try_get(1)?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get(0)?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get(2)?.unwrap_or("null");
+        let mut out_put:Vec<AvailableRaceResponse> = Vec::new();
+        if status_id != '0'.to_string(){
+            let out_json = json!({
+                "TVN":tvn,
+                "Status_id":status_id,
+                "Message":message
+            });
+            let json_string = serde_json::to_string(&out_json)?;
+            return Ok(json_string);
+        }
+        else {
+            for i in &res_value[1]{
+                let out_struct:AvailableRaceResponse= AvailableRaceResponse { 
+                    game_group_id:i.try_get("GameGroupID")?.unwrap_or_default(),
+                    race_group_name:String::from(i.try_get("RaceGroupName")?.unwrap_or("null")),
+                    meeting_id:String::from(i.try_get("MeetingID")?.unwrap_or("null")),
+                    race_id:i.try_get("RaceID")?.unwrap_or_default(),
+                    race_name:String::from(i.try_get("RaceName")?.unwrap_or("null")),
+                    race_date:String::from(i.try_get("RaceDate")?.unwrap_or("null")),
+                    race_time:String::from(i.try_get("RaceTime")?.unwrap_or("null")),
+                    race_no:i.try_get("RaceNo")?.unwrap_or_default(),
+                    race_distance:i.try_get("RaceDistance")?.unwrap_or_default(),
+                    meeting_length:i.try_get("MeetingLength")?.unwrap_or_default(),
+
+                    
+                };
+                out_put.push(out_struct);
+            }
+            
+            // let out_json = json!({
+            //     "TVN":tvn,
+            //     "Status_id":status_id,
+            //     "Message":message,
+            //     "Balance":balance,
+            //     "Win_balance":win_balance,
+            //     "Date_time":date_time
+            // });
+            let json_string = serde_json::to_string(&out_put)?;
+            return Ok(json_string);
+        }
+    }
+
+
+pub async fn get_game_race_details_sp(header_value:HeaderModel,game_group_id:i32,race_id:i32)->Result<String,Box<dyn std::error::Error>>{
+    let mut client: tiberius::Client<tokio_util::compat::Compat<tokio::net::TcpStream>> = db_connection().await?;
+    let qry = format!("EXEC CLI_GET_GameRaceDetails '{}',{},'{}','{}','{}',{},'{}',{},{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,race_id,game_group_id);
+    println!("{:?}",&qry);
+    let res = client.query(qry,&[]).await?;
+    let res_value=res.into_results().await?;
+        let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
+        if status_id != '0'.to_string(){
+            let out_json = json!({
+                "TVN":tvn,
+                "Status_id":status_id,
+                "Message":message
+            });
+            let json_string = serde_json::to_string(&out_json)?;
+            return Ok(json_string);
+        }
+        else {
+            //set 2
+            let meeting_id:&str=res_value[1][0].try_get("MeetingID")?.unwrap_or_default();
+            let race_id:i64=res_value[1][0].try_get("RaceID")?.unwrap_or_default();
+            let race_name:&str=res_value[1][0].try_get("RaceName")?.unwrap_or_default();
+            let race_no:i32=res_value[1][0].try_get("RaceNo")?.unwrap_or_default();
+            let race_date_time:&str=res_value[1][0].try_get("RaceDateTime")?.unwrap_or_default();
+            //set 3
+            let mut part_array:Vec<ParticipantsArray>=Vec::new();
+            // for i in res_value[2].iter(){
+            //     let json_object:ParticipantsArray=ParticipantsArray{
+            //         dog_id:i.try_get("DogID")?.unwrap_or_default(),
+            //         icon:String::from(i.try_get("Icon")?.unwrap_or("")),
+            //         dog_name:String::from(i.try_get("DogName")?.unwrap_or("")),
+            //         win:String::from(i.try_get("Win")?.unwrap_or("null")),
+            //         place:i.try_get("Place")?.unwrap_or_default(),
+            //         show:i.try_get("Show")?.unwrap_or_default(),
+            //         last_5_pos:String::from(i.try_get("Last5Pos")?.unwrap_or("")),
+            //         no_of_star:i.try_get("NoOfStar")?.unwrap_or_default()
+            //     };
+            //     part_array.push(json_object);
+            // }
+            // set 4
+            let info_string:&str=res_value[3][0].try_get("rsdesc")?.unwrap_or("");
+            let out_json = json!({
+                "TVN":tvn,
+                "Status_id":status_id,
+                "Message":message,
+                "meeting_id":meeting_id,
+                "race_id":race_id,
+                "race_name":race_name,
+                "race_no":race_no,
+                "race_date_time":race_date_time,
+                "participants":part_array,
+                "info_string":info_string
+            });
+            let json_string = serde_json::to_string(&out_json)?;
+            return Ok(json_string);
+        }
+    }
+
+
+pub async fn get_country_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel)->Result<String,Box<dyn std::error::Error>>{
+    let mut client = db_connection().await?;
+    let qry = "EXEC CLI_GET_Country ";
+    println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
+    let res = client.query(qry,&[]).await?;
+    let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
+    let mut out_json:Vec<CountryResponse>=Vec::new();
+            for i in res_value[0].iter(){
+                let out:CountryResponse=CountryResponse{
+                    id:i.try_get("Countryid")?.unwrap_or_default(),
+                    country_name:String::from(i.try_get("CountryDesc")?.unwrap_or("null")),
+                    country_code:String::from(i.try_get("CountryCode")?.unwrap_or("null"))
+                };
+                out_json.push(out)
+            }
+    let json_string = serde_json::to_string(&out_json)?;
+    return Ok(json_string);
     }

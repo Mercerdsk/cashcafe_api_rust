@@ -121,3 +121,37 @@ pub struct GetGamewiseBetInfoResponse{
     pub bet_amount:String,
     pub bet_info:String,
 }
+
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct AvailableRaceResponse{
+    pub game_group_id:i32,
+    pub race_group_name:String,
+    pub meeting_id:String,
+    pub race_id:i64,
+    pub race_name:String,
+    pub race_date:String,
+    pub race_time:String,
+    pub race_no:i32,
+    pub race_distance:i32,
+    pub meeting_length:i32,
+}
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct ParticipantsArray{
+    pub dog_id:i32,
+    pub icon:String,
+    pub dog_name:String,
+    pub win:String,
+    pub place:f32,
+    pub show:f32,
+    pub last_5_pos:String,
+    pub no_of_star:i32
+}
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct CountryResponse{
+    pub id:i32,
+    pub country_name:String,
+    pub country_code:String,
+}
