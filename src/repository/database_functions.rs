@@ -767,7 +767,9 @@ pub async fn player_reports_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
                         trans_date_time:String::from(i.try_get("TransDateTime")?.unwrap_or("")), 
                         opening_balance:String::from(i.try_get("OpeningBalance")?.unwrap_or("")),                                    
                         amount:String::from(i.try_get("Amount")?.unwrap_or("")), 
-                        closing_balance:String::from(i.try_get("ClosingBalance")?.unwrap_or("")) };
+                        closing_balance:String::from(i.try_get("ClosingBalance")?.unwrap_or("")),
+                        colour_code:String::from(i.try_get("ColourCode")?.unwrap_or("")) 
+                    };
                       
                     json_array.push(out_json);
                 }  

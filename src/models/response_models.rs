@@ -114,6 +114,7 @@ pub struct PlayerActivityResponse{
     pub opening_balance:String,
     pub amount:String,
     pub closing_balance:String,
+    pub colour_code:String,
 }
 
 #[derive(Serialize,Deserialize,Debug)]
