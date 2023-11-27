@@ -18,7 +18,7 @@ use reqwest::Client;
 #[get("/get_version/")]
 async fn get_version_handler(req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     
-    let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":0,\"Version\":\"Version : 1.0.1\"}}")?;
+    let parsed: Value = serde_json::from_str("{\"result\":{\"Date\":\"2023-11-27\",\"Version\":\"Version : 1.0.2\"}}")?;
     return Ok(web::Json(parsed)) 
     
 }
@@ -1373,6 +1373,111 @@ async fn get_country_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRe
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            return Ok(web::Json(parsed));
+        }
+        Err(e) =>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
+            return Ok(web::Json(parsed)) 
+        }
+    }
+    
+}
+
+#[post("/deposit_init/")]
+async fn deposit_init_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<DepositeInitModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+    let dt = Utc::now();
+    let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
+    let method = "deposit init";
+    let io_log = web_config.io_log;
+    let error_log = web_config.error_log;
+    // request logger....
+    //Header Section
+    let header_value = header_extractor(req).await?;
+    // let user_id = req.headers().get("APIKEY").unwrap();
+    //Header Section
+    //IO Logging Section
+    if io_log ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
+    // json body
+    let type_id = info.type_id;
+    let amount = info.amount;
+    let pg_type_id = info.pg_type_id;
+    let pg_ref_id = info.pg_ref_id.to_string();
+    let pg_default = info.pg_default.to_string();
+    let pg_item_desc = info.pg_item_desc.to_string();
+    let addmoney_type = info.addmoney_type;
+    let device_id = info.device_id;
+    
+    //json body
+    let result = deposit_init_sp(io_log,req_stamp,header_value,type_id,amount,pg_type_id,pg_ref_id,pg_default,pg_item_desc,addmoney_type,device_id).await;
+    match result {
+        Ok(x)=>{
+            let j = format!("{{\"result\":{}}}",x);
+            let parsed: Value = serde_json::from_str(&j)?;
+            if io_log ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
+            return Ok(web::Json(parsed));
+        }
+        Err(e) =>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
+            return Ok(web::Json(parsed)) 
+        }
+    }
+    
+}
+
+
+#[post("/addmoney_confirm/")]
+async fn addmoney_conformation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<AddMoneyConformationModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+    let dt = Utc::now();
+    let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
+    let method = "add money confirm";
+    let io_log = web_config.io_log;
+    let error_log = web_config.error_log;
+    // request logger....
+    //Header Section
+    let header_value = header_extractor(req).await?;
+    // let user_id = req.headers().get("APIKEY").unwrap();
+    //Header Section
+    //IO Logging Section
+    if io_log ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
+    // json body
+    let type_id = info.type_id;
+    let amount = info.amount;
+    let pg_type_id = info.pg_type_id;
+    let status = info.status;
+    let pg_ref_code = info.pg_ref_code.to_string();
+    let pg_txn_id = info.pg_txn_id.to_string();
+    let pg_ref_id = info.pg_ref_id.to_string();
+    let pg_data = info.pg_data.to_string();
+    let item_description = info.item_description.to_string();
+    let tax_amount = info.tax_amount.to_string();
+    let transaction_commission = info.transaction_commission.to_string();
+    let info_string = info.info.to_string();
+    
+    //json body
+    let result = addmoney_confirm_sp(io_log,req_stamp,header_value,type_id,amount,pg_type_id,status,pg_ref_code,pg_txn_id,pg_ref_id,pg_data,item_description,tax_amount,transaction_commission,info_string).await;
+    match result {
+        Ok(x)=>{
+            let j = format!("{{\"result\":{}}}",x);
+            let parsed: Value = serde_json::from_str(&j)?;
+            if io_log ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
             return Ok(web::Json(parsed));
         }
         Err(e) =>{

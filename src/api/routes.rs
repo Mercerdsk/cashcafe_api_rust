@@ -35,5 +35,7 @@ pub fn init_routes_v1(cfg: &mut web::ServiceConfig) {
     cfg.service(get_available_race_handler);
     cfg.service(get_game_race_details_handler);
     cfg.service(get_country_handler);
+    cfg.service(deposit_init_handler);
+    cfg.service(addmoney_conformation_handler);
 
 }

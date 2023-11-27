@@ -75,6 +75,7 @@ async fn main() -> std::io::Result<()> {
     // builder.set_certificate_chain_file("/home/sasikumar/Analytics_RND/rust_files/cashcafe_api/src/certicficates/cert.crt").unwrap();
     HttpServer::new(move|| {
         // let cors = Cors::default().allow_any_origin().send_wildcard();
+        let json_cfg = web::JsonConfig::default().limit(10_097_152);
         let cors = Cors::permissive()
             .allowed_methods(vec!["GET", "POST","OPTIONS"])
             // .allowed_headers(vec![
@@ -85,10 +86,11 @@ async fn main() -> std::io::Result<()> {
             .supports_credentials();
         App::new()
             .app_data(web::Data::new(web_config.clone()))
+            
         .wrap(cors)
         .wrap(Logger::default())
         .service(get_version_handler)
-        .service(web::scope("/v1").configure(init_routes_v1))
+        .service(web::scope("/v1").configure(init_routes_v1).app_data(json_cfg))
     })
     .bind(("0.0.0.0", api_port))?
     .run()

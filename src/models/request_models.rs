@@ -214,3 +214,32 @@ pub struct RaceDetailsModel{
     pub race_id:i32,
     pub game_group_id:i32,
 }
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct DepositeInitModel{
+    pub type_id:i32,
+    pub amount:i32,
+    pub pg_type_id:i32,
+    pub pg_ref_id:String,
+    pub pg_default:String,
+    pub pg_item_desc:String,
+    pub addmoney_type:i32,
+    pub device_id:i32,
+
+}
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct AddMoneyConformationModel{
+    pub type_id:i32,
+    pub amount:i32,
+    pub pg_type_id:i32,
+    pub status:i32,
+    pub pg_ref_code:String,
+    pub pg_txn_id:String,
+    pub pg_ref_id:String,
+    pub pg_data:String,
+    pub item_description:String,
+    pub tax_amount:String,
+    pub transaction_commission:String,
+    pub info:String,
+}
