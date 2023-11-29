@@ -2,8 +2,9 @@ use actix_web::web;
 use crate::api::endpoints::*;
 
 
-
 pub fn init_routes_v1(cfg: &mut web::ServiceConfig) {
+    let kyc_verify_cfg = web::JsonConfig::default().limit(25_097_152);
+    let profile_upd_cfg = web::JsonConfig::default().limit(25_097_152);
     cfg.service(player_creation_handler);
     cfg.service(player_login_handler);
     cfg.service(get_balance_handler);
@@ -18,9 +19,9 @@ pub fn init_routes_v1(cfg: &mut web::ServiceConfig) {
     cfg.service(get_server_time_handler);
     cfg.service(get_slot_games_handler);
     cfg.service(get_player_profile_handler);
-    cfg.service(upd_player_profile_handler);
+    cfg.service(upd_player_profile_handler).app_data(profile_upd_cfg);
     cfg.service(buy_handler);
-    cfg.service(kyc_verification_handler);
+    cfg.service(kyc_verification_handler).app_data(kyc_verify_cfg);
     cfg.service(get_current_result_handler);
     cfg.service(get_latest_result_handler);
     cfg.service(transaction_history_handler);

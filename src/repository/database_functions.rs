@@ -1077,25 +1077,25 @@ pub async fn get_game_race_details_sp(header_value:HeaderModel,game_group_id:i32
         else {
             //set 2
             let meeting_id:&str=res_value[1][0].try_get("MeetingID")?.unwrap_or_default();
-            let race_id:i64=res_value[1][0].try_get("RaceID")?.unwrap_or_default();
+            let race_id:&str=res_value[1][0].try_get("RaceID")?.unwrap_or_default();
             let race_name:&str=res_value[1][0].try_get("RaceName")?.unwrap_or_default();
-            let race_no:i32=res_value[1][0].try_get("RaceNo")?.unwrap_or_default();
+            let race_no:&str=res_value[1][0].try_get("RaceNo")?.unwrap_or_default();
             let race_date_time:&str=res_value[1][0].try_get("RaceDateTime")?.unwrap_or_default();
             //set 3
             let mut part_array:Vec<ParticipantsArray>=Vec::new();
-            // for i in res_value[2].iter(){
-            //     let json_object:ParticipantsArray=ParticipantsArray{
-            //         dog_id:i.try_get("DogID")?.unwrap_or_default(),
-            //         icon:String::from(i.try_get("Icon")?.unwrap_or("")),
-            //         dog_name:String::from(i.try_get("DogName")?.unwrap_or("")),
-            //         win:String::from(i.try_get("Win")?.unwrap_or("null")),
-            //         place:i.try_get("Place")?.unwrap_or_default(),
-            //         show:i.try_get("Show")?.unwrap_or_default(),
-            //         last_5_pos:String::from(i.try_get("Last5Pos")?.unwrap_or("")),
-            //         no_of_star:i.try_get("NoOfStar")?.unwrap_or_default()
-            //     };
-            //     part_array.push(json_object);
-            // }
+            for i in res_value[2].iter(){
+                let json_object:ParticipantsArray=ParticipantsArray{
+                    dog_id:String::from(i.try_get("DogID")?.unwrap_or("")),
+                    icon:String::from(i.try_get("Icon")?.unwrap_or("")),
+                    dog_name:String::from(i.try_get("DogName")?.unwrap_or("")),
+                    win:String::from(i.try_get("Win")?.unwrap_or("null")),
+                    place:String::from(i.try_get("Place")?.unwrap_or("")),
+                    show:String::from(i.try_get("Show")?.unwrap_or("")),
+                    last_5_pos:String::from(i.try_get("Last5Pos")?.unwrap_or("")),
+                    no_of_star:String::from(i.try_get("NoOfStar")?.unwrap_or(""))
+                };
+                part_array.push(json_object);
+            }
             // set 4
             let info_string:&str=res_value[3][0].try_get("rsdesc")?.unwrap_or("");
             let out_json = json!({

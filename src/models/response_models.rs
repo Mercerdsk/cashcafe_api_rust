@@ -140,14 +140,14 @@ pub struct AvailableRaceResponse{
 
 #[derive(Serialize,Deserialize,Debug)]
 pub struct ParticipantsArray{
-    pub dog_id:i32,
+    pub dog_id:String,
     pub icon:String,
     pub dog_name:String,
     pub win:String,
-    pub place:f32,
-    pub show:f32,
+    pub place:String,
+    pub show:String,
     pub last_5_pos:String,
-    pub no_of_star:i32
+    pub no_of_star:String
 }
 
 #[derive(Serialize,Deserialize,Debug)]
