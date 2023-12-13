@@ -225,7 +225,6 @@ pub struct DepositeInitModel{
     pub pg_item_desc:String,
     pub addmoney_type:i32,
     pub device_id:i32,
-
 }
 
 #[derive(Serialize,Deserialize,Debug)]
@@ -242,4 +241,26 @@ pub struct AddMoneyConformationModel{
     pub tax_amount:String,
     pub transaction_commission:String,
     pub info:String,
+}
+
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct VDRVHRBuyModel{
+    pub bet_info:String,
+    pub cli_trans_id:String,
+    pub total_bet_count:i32,
+    pub total_amount:String,
+    pub total_estimated_win:String,
+    pub requery:i32,
+}
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct ImageUploadModel{
+    pub image_string:String,
+    pub image_name:String,
+}
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct VDRResultModel{
+    pub game_group_id:i32,
 }

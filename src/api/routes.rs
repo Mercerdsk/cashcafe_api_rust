@@ -38,5 +38,8 @@ pub fn init_routes_v1(cfg: &mut web::ServiceConfig) {
     cfg.service(get_country_handler);
     cfg.service(deposit_init_handler);
     cfg.service(addmoney_conformation_handler);
+    cfg.service(vdr_vhr_handler);
+    cfg.service(image_upload_handler);
+    cfg.service(vdr_result_handler);
 
 }

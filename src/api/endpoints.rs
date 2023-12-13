@@ -10,6 +10,7 @@ use crate::models::request_models::*;
 use crate::api::extractor_functions::header_extractor;
 use crate::repository::database_functions::*;
 use crate::api::get_games_function::*;
+use crate::repository::ftp_functions::*;
 use reqwest;
 use reqwest::Error;
 use reqwest::Client;
@@ -1328,7 +1329,7 @@ async fn get_game_race_details_handler(web_config: web::Data<GlobalConfigModel>,
     let race_id = info.race_id;
     
     //json body
-    let result = get_game_race_details_sp(header_value,game_group_id,race_id).await;
+    let result = get_game_race_details_sp(io_log,req_stamp,header_value,game_group_id,race_id).await;
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
@@ -1471,6 +1472,140 @@ async fn addmoney_conformation_handler(web_config: web::Data<GlobalConfigModel>,
     
     //json body
     let result = addmoney_confirm_sp(io_log,req_stamp,header_value,type_id,amount,pg_type_id,status,pg_ref_code,pg_txn_id,pg_ref_id,pg_data,item_description,tax_amount,transaction_commission,info_string).await;
+    match result {
+        Ok(x)=>{
+            let j = format!("{{\"result\":{}}}",x);
+            let parsed: Value = serde_json::from_str(&j)?;
+            if io_log ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
+            return Ok(web::Json(parsed));
+        }
+        Err(e) =>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
+            return Ok(web::Json(parsed)) 
+        }
+    }
+    
+}
+
+
+#[post("/vdr_vhr_buy/")]
+async fn vdr_vhr_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<VDRVHRBuyModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+    let dt = Utc::now();
+    let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
+    let method = "vdr_vhr_buy";
+    let io_log = web_config.io_log;
+    let error_log = web_config.error_log;
+    // request logger....
+    //Header Section
+    let header_value = header_extractor(req).await?;
+    // let user_id = req.headers().get("APIKEY").unwrap();
+    //Header Section
+    //IO Logging Section
+    if io_log ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
+    // json body
+    let bet_info = info.bet_info.to_string();
+    let cli_trans_id = info.cli_trans_id.to_string();
+    let total_bet_count = info.total_bet_count;
+    let total_amount = info.total_amount.to_string();
+    let total_estimated_win = info.total_estimated_win.to_string();
+    let requery = info.requery;
+    //json body
+    let result = vdr_vhr_buy_sp(io_log,req_stamp,header_value,bet_info,cli_trans_id,total_bet_count,total_amount,total_estimated_win,requery).await;
+    match result {
+        Ok(x)=>{
+            let j = format!("{{\"result\":{}}}",x);
+            let parsed: Value = serde_json::from_str(&j)?;
+            if io_log ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
+            return Ok(web::Json(parsed));
+        }
+        Err(e) =>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
+            return Ok(web::Json(parsed)) 
+        }
+    }
+    
+}
+
+#[post("/image_upload/")]
+async fn image_upload_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<ImageUploadModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+    let dt = Utc::now();
+    let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
+    let method = "image upload";
+    let io_log = web_config.io_log;
+    let error_log = web_config.error_log;
+    // request logger....
+    //Header Section
+    let header_value = header_extractor(req).await?;
+    // let user_id = req.headers().get("APIKEY").unwrap();
+    //Header Section
+    //IO Logging Section
+    if io_log ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
+    // json body
+    let image_string = info.image_string.to_string();
+    let image_name = info.image_name.to_string();
+    //json body
+    let result = image_upload(image_string,image_name).await;
+    match result {
+        Ok(x)=>{
+            let j = format!("{{\"result\":{}}}",x);
+            let parsed: Value = serde_json::from_str(&j)?;
+            if io_log ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
+            return Ok(web::Json(parsed));
+        }
+        Err(e) =>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
+            return Ok(web::Json(parsed)) 
+        }
+    }
+    
+}
+
+
+#[post("/vdr_result/")]
+async fn vdr_result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<VDRResultModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+    let dt = Utc::now();
+    let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
+    let method = "vdr_result";
+    let io_log = web_config.io_log;
+    let error_log = web_config.error_log;
+    // request logger....
+    //Header Section
+    let header_value = header_extractor(req).await?;
+    // let user_id = req.headers().get("APIKEY").unwrap();
+    //Header Section
+    //IO Logging Section
+    if io_log ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
+    // json body
+    let game_group_id = info.game_group_id;
+    //json body
+    let result = vdr_result_sp(io_log,req_stamp,header_value,game_group_id).await;
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
