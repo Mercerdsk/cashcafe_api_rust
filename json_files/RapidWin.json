@@ -1,4 +1,44 @@
 [
+{
+        "Type": 1,
+        "GameTypeID": 41,
+        "GameTypeName": "Quick Win",
+        "GameUrl": "/quickwin",
+        "GameIcon": "Quick-Win.webp",
+        "CategoryID": 0
+    },
+	{
+        "Type": 1,
+        "GameTypeID": 48,
+        "GameTypeName": "SICBO",
+        "GameUrl": "/sicbo",
+        "GameIcon": "sic-bo.webp",
+        "CategoryID": 0
+    },
+	{
+        "Type": 1,
+        "GameTypeID": 42,
+        "GameTypeName": "Quick 9",
+        "GameUrl": "/quick9",
+        "GameIcon": "quick-9.webp",
+        "CategoryID": 0
+    },
+	{
+        "Type": 1,
+        "GameTypeID": 40,
+        "GameTypeName": "Roulette",
+        "GameUrl": "/roulette",
+        "GameIcon": "Roulette.webp",
+        "CategoryID": 0
+    },
+	{
+        "Type": 1,
+        "GameTypeID": 59,
+        "GameTypeName": "Panta",
+        "GameUrl": "/Panta",
+        "GameIcon": "panta.webp",
+        "CategoryID": 0
+    },
     {
         "Type": 2,
         "GameTypeID": 31,
