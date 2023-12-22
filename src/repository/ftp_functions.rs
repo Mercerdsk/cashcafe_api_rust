@@ -8,23 +8,25 @@ use futures_util::__private::async_await;
 
 pub async fn image_upload(base64_image:String,image_name:String)->Result<String,Box<dyn std::error::Error>> {
     // Create a connection to an FTP server and authenticate to it.
-    let mut ftp_stream = FtpStream::connect("115.110.148.67:21").unwrap();
-    let _ = ftp_stream.login("Cashcafeftp", "@Cash2ftpUs36#").unwrap();
-
-    // Get the current directory that the client will be reading from and writing to.
-    println!("Current directory: {}", ftp_stream.pwd().unwrap());
-    
-    // Change into a new directory, relative to the one we are currently in.
-    let _ = ftp_stream.cwd("UploadFiles/Kyc_verify").unwrap();
-    ///---------------------------Local----------------------------------------
-    // let mut ftp_stream = FtpStream::connect("192.168.10.225:21").unwrap();
-    // let _ = ftp_stream.login("uitest", "u1Test2*").unwrap();
+    //------------------------LIVE---------------------------------------
+    // let mut ftp_stream = FtpStream::connect("115.110.148.67:21").unwrap();
+    // let _ = ftp_stream.login("Cashcafeftp", "@Cash2ftpUs36#").unwrap();
 
     // // Get the current directory that the client will be reading from and writing to.
     // println!("Current directory: {}", ftp_stream.pwd().unwrap());
     
     // // Change into a new directory, relative to the one we are currently in.
-    // let _ = ftp_stream.cwd("Suriname/UploadFiles/cashcafe/Kyc_verify").unwrap();
+    // let _ = ftp_stream.cwd("UploadFiles/Kyc_verify").unwrap();
+    //------------------------LIVE--------------------------------------------
+    ///---------------------------Local----------------------------------------
+    let mut ftp_stream = FtpStream::connect("192.168.10.225:21").unwrap();
+    let _ = ftp_stream.login("uitest", "u1Test2*").unwrap();
+
+    // Get the current directory that the client will be reading from and writing to.
+    println!("Current directory: {}", ftp_stream.pwd().unwrap());
+    
+    // Change into a new directory, relative to the one we are currently in.
+    let _ = ftp_stream.cwd("Suriname/UploadFiles/cashcafe/Kyc_verify").unwrap();
     /// --------------------------Local----------------------------------------
     println!("Current directory: {}", ftp_stream.pwd().unwrap());
     

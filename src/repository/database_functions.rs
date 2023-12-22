@@ -6,6 +6,7 @@ use serde_json::json;
 use crate::repository::database_connection::db_connection;
 use crate::models::request_models::*;
 use crate::models::response_models::*;
+use crate::repository::sms_email_function::*;
 
 
 pub async fn player_creation_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,first_name:String,last_name:String,email:String,dob:String,password:String,max_deposite_limit:i32,max_bet_limit:i32,kyc_id:i32,kyc_id_number:String,postal_code:String)->Result<String,Box<dyn std::error::Error>>{
@@ -31,6 +32,10 @@ pub async fn player_creation_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderMode
         };
         array_data.push(out_json);
         let json_string = serde_json::to_string(&array_data)?;
+        if res_value.len()==2{
+            let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
+            let sms_mail_result = sms_email_function(sms_email_info.to_string());
+        }
     return Ok(json_string);
     }
 
@@ -298,6 +303,10 @@ pub async fn withdraw_money_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
                 "Message":message
             });
             let json_string = serde_json::to_string(&out_json)?;
+            if res_value.len()==2{
+                let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
+                let sms_mail_result = sms_email_function(sms_email_info.to_string());
+            }
             return Ok(json_string);
         }
         else {
@@ -315,6 +324,10 @@ pub async fn withdraw_money_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
                 "Date_time":date_time
             });
             let json_string = serde_json::to_string(&out_json)?;
+            if res_value.len()==3{
+                let sms_email_info:&str=res_value[2][0].try_get(0)?.unwrap_or("null");
+                let sms_mail_result = sms_email_function(sms_email_info.to_string());
+            }
             return Ok(json_string);
         }
     }
@@ -366,6 +379,10 @@ pub async fn otp_generation_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
             "Message":message
         });
         let json_string = serde_json::to_string(&out_json)?;
+        if res_value.len()==2{
+            let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
+            let sms_mail_result = sms_email_function(sms_email_info.to_string());
+        }
         return Ok(json_string);
     }
 
@@ -846,6 +863,10 @@ pub async fn password_change_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderMode
             "Message":message
         });
         let json_string = serde_json::to_string(&out_json)?;
+        if res_value.len()==2{
+            let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
+            let sms_mail_result = sms_email_function(sms_email_info.to_string());
+        }
         return Ok(json_string);
     }
 
@@ -1209,6 +1230,10 @@ pub async fn addmoney_confirm_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderMod
             "Message":message
         });
         let json_string = serde_json::to_string(&out_json)?;
+        if res_value.len()==2{
+            let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
+            let sms_mail_result = sms_email_function(sms_email_info.to_string());
+        }
         return Ok(json_string);
     }
     else {
@@ -1231,6 +1256,10 @@ pub async fn addmoney_confirm_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderMod
             "pg_msg":pg_msg
         });
         let json_string = serde_json::to_string(&out_json)?;
+        if res_value.len()==3{
+            let sms_email_info:&str=res_value[2][0].try_get(0)?.unwrap_or("null");
+            let sms_mail_result = sms_email_function(sms_email_info.to_string());
+        }
         return Ok(json_string);
     }
 }

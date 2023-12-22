@@ -1310,7 +1310,7 @@ async fn get_available_race_handler(web_config: web::Data<GlobalConfigModel>,inf
 async fn get_game_race_details_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<RaceDetailsModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    let method = "get_available_race";
+    let method = "get_game_race_details";
     let io_log = web_config.io_log;
     let error_log = web_config.error_log;
     // request logger....
