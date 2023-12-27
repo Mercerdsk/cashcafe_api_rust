@@ -308,10 +308,7 @@ pub async fn withdraw_money_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
             let json_string = serde_json::to_string(&out_json)?;
             if res_value.len()==2{
                 let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
-                let sms_mail_result = sms_email_function(sms_email_info.to_string()).await?;
-                if IO_LOG ==0{
-                    info!("STAMP : {:?}, SMS API ,RESULT-SET : {:?}",req_stamp,&sms_mail_result);
-                }
+                let _ = sms_email_function(sms_email_info.to_string());
             }
             return Ok(json_string);
         }
@@ -877,10 +874,7 @@ pub async fn password_change_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderMode
         let json_string = serde_json::to_string(&out_json)?;
         if res_value.len()==2{
             let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
-            let sms_mail_result = sms_email_function(sms_email_info.to_string()).await?;
-                if IO_LOG ==0{
-                    info!("STAMP : {:?}, SMS API ,RESULT-SET : {:?}",req_stamp,&sms_mail_result);
-                }
+            let _ = sms_email_function(sms_email_info.to_string());
         }
         return Ok(json_string);
     }
@@ -1247,10 +1241,7 @@ pub async fn addmoney_confirm_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderMod
         let json_string = serde_json::to_string(&out_json)?;
         if res_value.len()==2{
             let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
-            let sms_mail_result = sms_email_function(sms_email_info.to_string()).await?;
-                if IO_LOG ==0{
-                    info!("STAMP : {:?}, SMS API ,RESULT-SET : {:?}",req_stamp,&sms_mail_result);
-                }
+            let _ = sms_email_function(sms_email_info.to_string());
         }
         return Ok(json_string);
     }
@@ -1276,10 +1267,7 @@ pub async fn addmoney_confirm_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderMod
         let json_string = serde_json::to_string(&out_json)?;
         if res_value.len()==3{
             let sms_email_info:&str=res_value[2][0].try_get(0)?.unwrap_or("null");
-            let sms_mail_result = sms_email_function(sms_email_info.to_string()).await?;
-                if IO_LOG ==0{
-                    info!("STAMP : {:?}, SMS API ,RESULT-SET : {:?}",req_stamp,&sms_mail_result);
-                }
+            let _ = sms_email_function(sms_email_info.to_string());
         }
         return Ok(json_string);
     }
