@@ -12,6 +12,10 @@ pub struct GlobalConfigModel{
     pub log_file_path:String,
     pub error_log:i32,
     pub io_log:i32,
+    pub ftp_host:String,
+    pub ftp_name:String,
+    pub ftp_password:String,
+    pub sms_email_url:String,
 }
 
 #[derive(Serialize,Deserialize,Debug)]
@@ -258,6 +262,7 @@ pub struct VDRVHRBuyModel{
 pub struct ImageUploadModel{
     pub image_string:String,
     pub image_name:String,
+    pub upload_flag:i32,
 }
 
 #[derive(Serialize,Deserialize,Debug)]

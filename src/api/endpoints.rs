@@ -55,7 +55,10 @@ async fn player_creation_handler(web_config: web::Data<GlobalConfigModel>,info:w
     let kyc_id_number:String=info.kyc_id_number.to_string();
     let postal_code:String=info.postal_code.to_string();
     //json body
-    let result = player_creation_sp(io_log,req_stamp,header_value,first_name,last_name,email,dob,password,max_deposite_limit,max_bet_limit,kyc_id,kyc_id_number,postal_code).await;
+
+    // sms email url
+    let sms_email_url:String = web_config.sms_email_url.to_string();
+    let result = player_creation_sp(io_log,req_stamp,sms_email_url,header_value,first_name,last_name,email,dob,password,max_deposite_limit,max_bet_limit,kyc_id,kyc_id_number,postal_code).await;
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
@@ -278,6 +281,7 @@ async fn add_money_handler(web_config: web::Data<GlobalConfigModel>,info:web::Js
     let email = info.email.to_string();
     let item_desc = info.item_description.to_string();
     //json body
+
     let result = add_money_sp(io_log,req_stamp,header_value,type_id,amount,pg_type_id,pg_txn_id,email,item_desc).await;
     match result {
         Ok(x)=>{
@@ -326,7 +330,9 @@ async fn withdraw_money_handler(web_config: web::Data<GlobalConfigModel>,info:we
     let pg_data = info.pg_data.to_string();
     let item_desc = info.item_description.to_string();
     //json body
-    let result = withdraw_money_sp(io_log,req_stamp,header_value,type_id,amount,pg_type_id,pg_txn_id,pg_ref_id,pg_data,item_desc).await;
+    //sms email url
+    let sms_email_url = web_config.sms_email_url.to_string();
+    let result = withdraw_money_sp(io_log,req_stamp,sms_email_url,header_value,type_id,amount,pg_type_id,pg_txn_id,pg_ref_id,pg_data,item_desc).await;
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
@@ -410,7 +416,9 @@ async fn otp_generation_handler(web_config: web::Data<GlobalConfigModel>,info:we
     // json body
     let type_id = info.type_id;
     //json body
-    let result = otp_generation_sp(io_log,req_stamp,header_value,type_id).await;
+    // sms email url
+    let sms_email_url = web_config.sms_email_url.to_string();
+    let result = otp_generation_sp(io_log,req_stamp,sms_email_url,header_value,type_id).await;
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
@@ -1040,7 +1048,9 @@ async fn password_change_handler(web_config: web::Data<GlobalConfigModel>,info:w
     let flag = info.flag;
     
     //json body
-    let result = password_change_sp(io_log,req_stamp,header_value,old_passsword,new_password,flag).await;
+    // sms email url
+    let sms_email_url = web_config.sms_email_url.to_string();
+    let result = password_change_sp(io_log,req_stamp,sms_email_url,header_value,old_passsword,new_password,flag).await;
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
@@ -1471,7 +1481,9 @@ async fn addmoney_conformation_handler(web_config: web::Data<GlobalConfigModel>,
     let info_string = info.info.to_string();
     
     //json body
-    let result = addmoney_confirm_sp(io_log,req_stamp,header_value,type_id,amount,pg_type_id,status,pg_ref_code,pg_txn_id,pg_ref_id,pg_data,item_description,tax_amount,transaction_commission,info_string).await;
+    // sms email url
+    let sms_email_url = web_config.sms_email_url.to_string();
+    let result = addmoney_confirm_sp(io_log,req_stamp,sms_email_url,header_value,type_id,amount,pg_type_id,status,pg_ref_code,pg_txn_id,pg_ref_id,pg_data,item_description,tax_amount,transaction_commission,info_string).await;
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
@@ -1561,8 +1573,15 @@ async fn image_upload_handler(web_config: web::Data<GlobalConfigModel>,info:web:
     // json body
     let image_string = info.image_string.to_string();
     let image_name = info.image_name.to_string();
+    let upload_flag = info.upload_flag;
     //json body
-    let result = image_upload(image_string,image_name).await;
+
+    // FTP credentials
+    let ftp_host = web_config.ftp_host.to_string();
+    let ftp_name = web_config.ftp_name.to_string();
+    let ftp_password = web_config.ftp_password.to_string();
+    //
+    let result = image_upload(image_string,image_name,upload_flag,ftp_host,ftp_name,ftp_password).await;
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
