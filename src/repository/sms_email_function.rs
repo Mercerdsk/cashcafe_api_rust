@@ -27,10 +27,12 @@ pub async fn sms_email_function(sms_email_info:String,sms_email_url:String)->Res
       
       if response.status().is_success() {
         let response_text: Value = response.json().await?;
+        println!("{:?}",response_text);
       return Ok(response_text)
       }
       else{
         let response_text: Value = response.json().await?;
+        println!("{:?}",response_text);
       return Ok(response_text)
       }
 }

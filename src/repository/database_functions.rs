@@ -34,9 +34,10 @@ pub async fn player_creation_sp(IO_LOG:i32,req_stamp:f64,sms_email_url:String,he
         let json_string = serde_json::to_string(&array_data)?;
         if res_value.len()==2{
             let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
-            let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await?;
-                if IO_LOG ==0{
-                    info!("STAMP : {:?}, SMS API ,RESULT-SET : {:?}",req_stamp,&sms_mail_result);
+            let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
+                match sms_mail_result{
+                    Ok(x)=>{println!("sms_email_api success")},
+                    Err(e)=>{println!("sms_email_api")}
                 }
         }
     return Ok(json_string);
@@ -308,7 +309,11 @@ pub async fn withdraw_money_sp(IO_LOG:i32,req_stamp:f64,sms_email_url:String,hea
             let json_string = serde_json::to_string(&out_json)?;
             if res_value.len()==2{
                 let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
-                let _ = sms_email_function(sms_email_info.to_string(),sms_email_url);
+                let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
+                match sms_mail_result{
+                    Ok(x)=>{println!("sms_email_api success")},
+                    Err(e)=>{println!("sms_email_api")}
+                }
             }
             return Ok(json_string);
         }
@@ -329,9 +334,10 @@ pub async fn withdraw_money_sp(IO_LOG:i32,req_stamp:f64,sms_email_url:String,hea
             let json_string = serde_json::to_string(&out_json)?;
             if res_value.len()==3{
                 let sms_email_info:&str=res_value[2][0].try_get(0)?.unwrap_or("null");
-                let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await?;
-                if IO_LOG ==0{
-                    info!("STAMP : {:?}, SMS API ,RESULT-SET : {:?}",req_stamp,&sms_mail_result);
+                let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
+                match sms_mail_result{
+                    Ok(x)=>{println!("sms_email_api success")},
+                    Err(e)=>{println!("sms_email_api")}
                 }
             }
             return Ok(json_string);
@@ -387,7 +393,11 @@ pub async fn otp_generation_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,he
         let json_string = serde_json::to_string(&out_json)?;
         if res_value.len()==2{
             let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
-            let _ = sms_email_function(sms_email_info.to_string(),sms_email_url);
+            let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
+                match sms_mail_result{
+                    Ok(x)=>{println!("sms_email_api success")},
+                    Err(e)=>{println!("sms_email_api")}
+                }
         }
         return Ok(json_string);
     }
@@ -870,8 +880,13 @@ pub async fn password_change_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,h
         });
         let json_string = serde_json::to_string(&out_json)?;
         if res_value.len()==2{
+            println!("password change");
             let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
-            let _ = sms_email_function(sms_email_info.to_string(),sms_email_url);
+            let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
+                match sms_mail_result{
+                    Ok(x)=>{println!("sms_email_api success")},
+                    Err(e)=>{println!("sms_email_api")}
+                }
         }
         return Ok(json_string);
     }
@@ -1238,7 +1253,11 @@ pub async fn addmoney_confirm_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,
         let json_string = serde_json::to_string(&out_json)?;
         if res_value.len()==2{
             let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
-            let _ = sms_email_function(sms_email_info.to_string(),sms_email_url);
+            let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
+                match sms_mail_result{
+                    Ok(x)=>{println!("sms_email_api success")},
+                    Err(e)=>{println!("sms_email_api")}
+                }
         }
         return Ok(json_string);
     }
@@ -1264,7 +1283,11 @@ pub async fn addmoney_confirm_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,
         let json_string = serde_json::to_string(&out_json)?;
         if res_value.len()==3{
             let sms_email_info:&str=res_value[2][0].try_get(0)?.unwrap_or("null");
-            let _ = sms_email_function(sms_email_info.to_string(),sms_email_url);
+            let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
+                match sms_mail_result{
+                    Ok(x)=>{println!("sms_email_api success")},
+                    Err(e)=>{println!("sms_email_api")}
+                }
         }
         return Ok(json_string);
     }
