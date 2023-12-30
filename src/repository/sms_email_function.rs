@@ -4,16 +4,6 @@ use actix_web::web::Json;
 
 
 pub async fn sms_email_function(sms_email_info:String,sms_email_url:String)->Result<Value,Box<dyn std::error::Error>>{
-    // let url = "http://192.168.10.227/CashCafeSmsEmailApi/api/user/sendEmail";
-    //Live 
-    let url = "http://192.168.151.21:10050/CashCafeSmsEmailApi/api/user/sendEmail";
-
-    // json body
-
-    // let json_data = json!(
-    //     {"data":"2^arjundsk98@gmail.com|REG-CashCafe|Thamizh^971588163463|test sms by thamil"}
-    // );
-
     let json_data = json!(
         {"data":sms_email_info}
     );

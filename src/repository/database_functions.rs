@@ -6,6 +6,7 @@ use serde_json::json;
 use crate::repository::database_connection::db_connection;
 use crate::models::request_models::*;
 use crate::models::response_models::*;
+use crate::repository::rabbitmq_publisher::queue_publisher;
 use crate::repository::sms_email_function::*;
 
 
@@ -78,6 +79,7 @@ pub async fn player_login_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,p
             let created_date:&str=res_value[1][0].try_get("CreateDate")?.unwrap_or("");
             let timeout_seconds:&str=res_value[1][0].try_get("TimoutSeconds")?.unwrap_or("");
             let player_name:&str=res_value[1][0].try_get("playername")?.unwrap_or("");
+            let password_status:i32=res_value[1][0].try_get("PasswordStatus")?.unwrap_or_default();
             let out_json = json!({
                 "TVN":tvn,
                 "Status_id":status_id,
@@ -90,7 +92,8 @@ pub async fn player_login_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,p
                 "Imageinfo":imageinfo,
                 "Created_date":created_date,
                 "player_name":player_name,
-                "timeout_seconds":timeout_seconds
+                "timeout_seconds":timeout_seconds,
+                "password_status":password_status
             });
             let json_string = serde_json::to_string(&out_json)?;
             return Ok(json_string);
@@ -887,6 +890,14 @@ pub async fn password_change_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,h
                     Ok(x)=>{println!("sms_email_api success")},
                     Err(e)=>{println!("sms_email_api")}
                 }
+            // let json_data = json!({
+            //     "data":sms_email_info
+            // });
+            // let sms_mail_result = queue_publisher(json_data).await;
+            // match sms_mail_result{
+            //     Ok(x)=>{println!("sms_email_api success")},
+            //     Err(e)=>{println!("sms_email_api")}
+            // }
         }
         return Ok(json_string);
     }
