@@ -75,8 +75,10 @@ async fn main() -> std::io::Result<()> {
     // builder.set_certificate_chain_file("/home/sasikumar/Analytics_RND/rust_files/cashcafe_api/src/certicficates/cert.crt").unwrap();
     HttpServer::new(move|| {
         // let cors = Cors::default().allow_any_origin().send_wildcard();
-        let cors = Cors::permissive()
+        // let cors = Cors::permissive()
+        let cors = Cors::default()
             .allowed_methods(vec!["GET", "POST","OPTIONS"])
+            .allowed_origin("https://cashcafe.ae/")
             // .allowed_headers(vec![
             //     header::CONTENT_TYPE,
             //     header::AUTHORIZATION,

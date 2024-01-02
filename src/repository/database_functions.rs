@@ -12,9 +12,8 @@ use crate::repository::sms_email_function::*;
 
 pub async fn player_creation_sp(IO_LOG:i32,req_stamp:f64,sms_email_url:String,header_value:HeaderModel,first_name:String,last_name:String,email:String,dob:String,password:String,max_deposite_limit:i32,max_bet_limit:i32,kyc_id:i32,kyc_id_number:String,postal_code:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
-    let mut array_data:Vec<PlayerCreationResponse> = Vec::new();
     let qry = format!("EXEC CLI_INS_PlayerRegistration '{}',{},'{}','{}','{}',{},'{}','{}','{}','{}','{}','{}',{},{},{},'{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,first_name,last_name,email,dob,password,max_deposite_limit,max_bet_limit,kyc_id,kyc_id_number,postal_code);
-    println!("{:?}",&qry);
+    //println!("{:?}",&qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -31,24 +30,23 @@ pub async fn player_creation_sp(IO_LOG:i32,req_stamp:f64,sms_email_url:String,he
             Status_id:String::from(status_id),
             Message:String::from(message),
         };
-        array_data.push(out_json);
-        let json_string = serde_json::to_string(&array_data)?;
+        let json_string = serde_json::to_string(&out_json)?;
         if res_value.len()==2{
             let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
             let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
                 match sms_mail_result{
-                    Ok(x)=>{println!("sms_email_api success")},
-                    Err(e)=>{println!("sms_email_api")}
+                    Ok(x)=>{info!("sms_email_api success")},
+                    Err(e)=>{info!("sms_email_api")}
                 }
         }
-    return Ok(json_string);
+    return Ok(json_string); 
     }
 
 
 pub async fn player_login_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,password:String,captcha:String,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client: tiberius::Client<tokio_util::compat::Compat<tokio::net::TcpStream>> = db_connection().await?;
     let qry = format!("EXEC CLI_PlayerLogin '{}',{},'{}','{}','{}',{},'{}','{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,password,captcha,type_id);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -103,7 +101,7 @@ pub async fn player_login_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,p
 pub async fn get_balance_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_Balance '{}',{},'{}','{}','{}',{},'{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -145,7 +143,7 @@ pub async fn get_balance_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel)->
 pub async fn available_games_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_AvailableGames '{}',{},'{}','{}','{}',{},'{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -204,7 +202,7 @@ pub async fn available_games_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderMode
 pub async fn payment_init_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,amount:i64,pg_type_id:i32,pg_txn_id:String,email:String,item_des:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_PayMentInitRequest '{}',{},'{}','{}','{}',{},'{}',{},{},'{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,amount,pg_type_id,pg_txn_id,email,item_des);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -246,7 +244,7 @@ pub async fn payment_init_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,a
 pub async fn add_money_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type_id:i32,amount:i64,pg_type_id:i32,pg_txn_id:String,email:String,item_des:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_AddMoneyRequest '{}',{},'{}','{}','{}',{},'{}',{},{},{},'{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id,amount,pg_type_id,pg_txn_id,email,item_des);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -291,7 +289,7 @@ pub async fn add_money_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type
 pub async fn withdraw_money_sp(IO_LOG:i32,req_stamp:f64,sms_email_url:String,header_value:HeaderModel,type_id:i32,amount:i64,pg_type_id:i32,pg_txn_id:String,pg_ref_id:String,pg_data:String,item_des:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_WithDrawRequest   '{}',{},'{}','{}','{}',{},'{}',{},{},{},'{}','{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id,amount,pg_type_id,pg_txn_id,pg_ref_id,pg_data,item_des);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -314,8 +312,8 @@ pub async fn withdraw_money_sp(IO_LOG:i32,req_stamp:f64,sms_email_url:String,hea
                 let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
                 let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
                 match sms_mail_result{
-                    Ok(x)=>{println!("sms_email_api success")},
-                    Err(e)=>{println!("sms_email_api")}
+                    Ok( _x)=>{info!("sms_email_api success")},
+                    Err(_e)=>{info!("sms_email_api")}
                 }
             }
             return Ok(json_string);
@@ -339,8 +337,8 @@ pub async fn withdraw_money_sp(IO_LOG:i32,req_stamp:f64,sms_email_url:String,hea
                 let sms_email_info:&str=res_value[2][0].try_get(0)?.unwrap_or("null");
                 let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
                 match sms_mail_result{
-                    Ok(x)=>{println!("sms_email_api success")},
-                    Err(e)=>{println!("sms_email_api")}
+                    Ok(x)=>{info!("sms_email_api success")},
+                    Err(e)=>{info!("sms_email_api")}
                 }
             }
             return Ok(json_string);
@@ -351,7 +349,7 @@ pub async fn withdraw_money_sp(IO_LOG:i32,req_stamp:f64,sms_email_url:String,hea
 pub async fn otp_validation_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,otp:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_OTPValidate '{}',{},'{}','{}','{}',{},'{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,otp);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -360,9 +358,10 @@ pub async fn otp_validation_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
     }
-        let status_id:&str = res_value[0][0].try_get(1)?.unwrap_or("null");
-        let tvn:&str = res_value[0][0].try_get(0)?.unwrap_or("null");
-        let message:&str = res_value[0][0].try_get(2)?.unwrap_or("null");
+    let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+    let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+    let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
+    if status_id != '2'.to_string(){
         let out_json = json!({
             "TVN":tvn,
             "Status_id":status_id,
@@ -371,12 +370,42 @@ pub async fn otp_validation_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
         let json_string = serde_json::to_string(&out_json)?;
         return Ok(json_string);
     }
+    else {
+        let balance:&str=res_value[1][0].try_get("Balance")?.unwrap_or("");
+        let win_balance:&str=res_value[1][0].try_get("Win_Balance")?.unwrap_or("");
+        let session_id:&str=res_value[1][0].try_get("Session_Id")?.unwrap_or("");
+        let user_name:&str=res_value[1][0].try_get("User_Name")?.unwrap_or("");
+        let date_time:&str=res_value[1][0].try_get("Date_Time")?.unwrap_or("");
+        let imageinfo:&str=res_value[1][0].try_get("ImageInfo")?.unwrap_or("");
+        let created_date:&str=res_value[1][0].try_get("CreateDate")?.unwrap_or("");
+        let timeout_seconds:&str=res_value[1][0].try_get("TimoutSeconds")?.unwrap_or("");
+        let player_name:&str=res_value[1][0].try_get("playername")?.unwrap_or("");
+        let password_status:i32=res_value[1][0].try_get("PasswordStatus")?.unwrap_or_default();
+        let out_json = json!({
+            "TVN":tvn,
+            "Status_id":status_id,
+            "Message":message,
+            "Balance":balance,
+            "Win_balance":win_balance,
+            "Session_id":session_id,
+            "User_name":user_name,
+            "Date_time":date_time,
+            "Imageinfo":imageinfo,
+            "Created_date":created_date,
+            "player_name":player_name,
+            "timeout_seconds":timeout_seconds,
+            "password_status":password_status
+        });
+        let json_string = serde_json::to_string(&out_json)?;
+        return Ok(json_string);
+    }
+    }
 
 
 pub async fn otp_generation_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,header_value:HeaderModel,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_OTPGeneration '{}',{},'{}','{}','{}',{},'{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -398,8 +427,8 @@ pub async fn otp_generation_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,he
             let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
             let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
                 match sms_mail_result{
-                    Ok(x)=>{println!("sms_email_api success")},
-                    Err(e)=>{println!("sms_email_api")}
+                    Ok(x)=>{info!("sms_email_api success")},
+                    Err(e)=>{info!("sms_email_api")}
                 }
         }
         return Ok(json_string);
@@ -408,7 +437,7 @@ pub async fn otp_generation_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,he
 pub async fn get_server_time_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_ServerTime '{}',{},'{}','{}','{}',{},'{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -430,7 +459,7 @@ pub async fn get_server_time_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderMode
 pub async fn get_player_profile_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_Profile '{}',{},'{}','{}','{}',{},'{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -481,7 +510,7 @@ pub async fn get_player_profile_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderM
 pub async fn update_player_profile_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,player_image:String,player_name:String,email:String,kyc_no:String,dob:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_UPD_PlayerProfile '{}',{},'{}','{}','{}',{},'{}','{}','{}','{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,player_image,player_name,email,kyc_no,dob);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -506,7 +535,7 @@ pub async fn update_player_profile_sp(IO_LOG:i32,req_stamp:f64,header_value:Head
 pub async fn buy_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,reflotid:i32,group_id:i32,draw_time:String,bet_info:String,client_transid:String,amount:i64,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC TRA_OnelineSales '{}',{},'{}','{}','{}',{},'{}',{},{},'{}','{}','{}','{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,reflotid,group_id,draw_time,bet_info,client_transid,amount,type_id);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -547,7 +576,7 @@ pub async fn buy_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,reflotid:i
                 "Win_Balance":win_balance
             });
             let json_string = serde_json::to_string(&out_json)?;
-            println!("{}",json_string);
+            //println!("{}",json_string);
             return Ok(json_string);
         }
     }
@@ -556,7 +585,7 @@ pub async fn buy_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,reflotid:i
 pub async fn kyc_verification_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type_id:i32,player_name:String,dob:String,nationality:String,id_type:String,id_no:String,address:String,proof:String,proof2:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_KYCVerifiCation '{}',{},'{}','{}','{}',{},'{}','{}','{}','{}','{}','{}','{}','{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id,player_name,dob,nationality,id_type,id_no,address,proof,proof2);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -580,7 +609,7 @@ pub async fn kyc_verification_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderMod
 pub async fn get_current_result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,game_group_id:i32,draw_time:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_Currentresult '{}',{},'{}','{}','{}',{},'{}',{},'{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,game_group_id,draw_time);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -620,7 +649,7 @@ pub async fn get_current_result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderM
             
         });
         let json_string = serde_json::to_string(&out_json)?;
-        println!("{}",json_string);
+        //println!("{}",json_string);
         return Ok(json_string);
     }
     }
@@ -628,7 +657,7 @@ pub async fn get_current_result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderM
 pub async fn get_previous_result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,game_group_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_PreviousDrawResult '{}',{},'{}','{}','{}',{},'{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,game_group_id);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -661,7 +690,7 @@ pub async fn get_previous_result_sp(IO_LOG:i32,req_stamp:f64,header_value:Header
                 out_json.push(out);
             }    
         let json_string = serde_json::to_string(&out_json)?;
-        println!("{}",json_string);
+        //println!("{}",json_string);
         return Ok(json_string);
     }
     }
@@ -670,7 +699,7 @@ pub async fn get_previous_result_sp(IO_LOG:i32,req_stamp:f64,header_value:Header
 pub async fn transaction_history_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,from_date:String,to_date:String,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_TransactionDetails '{}',{},'{}','{}','{}',{},'{}','{}','{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,from_date,to_date,type_id);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -710,7 +739,7 @@ pub async fn transaction_history_sp(IO_LOG:i32,req_stamp:f64,header_value:Header
             }
             
             let json_string = serde_json::to_string(&output_vec)?;
-            println!("{}",json_string);
+            //println!("{}",json_string);
             return Ok(json_string);
         }
         else if type_id==2 || type_id==3 {
@@ -727,7 +756,7 @@ pub async fn transaction_history_sp(IO_LOG:i32,req_stamp:f64,header_value:Header
             }
             
             let json_string = serde_json::to_string(&output_vec)?;
-            println!("{}",json_string);
+            //println!("{}",json_string);
             return Ok(json_string);
         }
         else {
@@ -738,7 +767,7 @@ pub async fn transaction_history_sp(IO_LOG:i32,req_stamp:f64,header_value:Header
                 
             });
             let json_string = serde_json::to_string(&out_json)?;
-            println!("{}",json_string);
+            //println!("{}",json_string);
             return Ok(json_string);
         }
         
@@ -748,7 +777,7 @@ pub async fn transaction_history_sp(IO_LOG:i32,req_stamp:f64,header_value:Header
 pub async fn player_reports_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,from_date:String,to_date:String,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_PlayerReports  '{}',{},'{}','{}','{}',{},'{}','{}','{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,from_date,to_date,type_id);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -791,7 +820,7 @@ pub async fn player_reports_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
                 json_array.push(out_json);
             }
             let json_string = serde_json::to_string(&json_array)?;
-            println!("{}",json_string);
+            //println!("{}",json_string);
             return Ok(json_string);
             }
             else{
@@ -810,11 +839,11 @@ pub async fn player_reports_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
                     json_array.push(out_json);
                 }  
                 let json_string = serde_json::to_string(&json_array)?;
-                println!("{}",json_string);
+                //println!("{}",json_string);
                 return Ok(json_string);              
             }
             // let json_string = serde_json::to_string(&json_array)?;
-            // println!("{}",json_string);
+            // //println!("{}",json_string);
             // return Ok(json_string);
         }
     }
@@ -825,7 +854,7 @@ pub async fn player_reports_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
 pub async fn result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,date:String,game_group_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_ResultDetails'{}',{},'{}','{}','{}',{},'{}','{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,date,game_group_id);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -864,7 +893,7 @@ pub async fn result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,date:St
 pub async fn password_change_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,header_value:HeaderModel,old_password:String,new_password:String,flag:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_UPD_UpdatePassword '{}',{},'{}','{}','{}',{},'{}','{}','{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,old_password,new_password,flag);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -883,20 +912,20 @@ pub async fn password_change_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,h
         });
         let json_string = serde_json::to_string(&out_json)?;
         if res_value.len()==2{
-            println!("password change");
+            //println!("password change");
             let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
             let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
                 match sms_mail_result{
-                    Ok(x)=>{println!("sms_email_api success")},
-                    Err(e)=>{println!("sms_email_api")}
+                    Ok(x)=>{info!("sms_email_api success")},
+                    Err(e)=>{info!("sms_email_api")}
                 }
             // let json_data = json!({
             //     "data":sms_email_info
             // });
             // let sms_mail_result = queue_publisher(json_data).await;
             // match sms_mail_result{
-            //     Ok(x)=>{println!("sms_email_api success")},
-            //     Err(e)=>{println!("sms_email_api")}
+            //     Ok(x)=>{info!("sms_email_api success")},
+            //     Err(e)=>{info!("sms_email_api")}
             // }
         }
         return Ok(json_string);
@@ -907,7 +936,7 @@ pub async fn password_change_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,h
 pub async fn ticket_info_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,transaction_id:String,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_TicketInfo  '{}',{},'{}','{}','{}',{},'{}','{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,transaction_id,type_id);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -938,7 +967,7 @@ pub async fn ticket_info_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,tr
             "print_info":ticket_info
         });
         let json_string = serde_json::to_string(&out_json)?;
-        println!("{}",json_string);
+        //println!("{}",json_string);
         return Ok(json_string);
     }
     }
@@ -948,7 +977,7 @@ pub async fn ticket_info_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,tr
 pub async fn odds_config_scheme_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,game_group_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_OddsConfigScheme '{}',{},'{}','{}','{}',{},'{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,game_group_id);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -1007,7 +1036,7 @@ pub async fn player_login_image_sp(header_value:HeaderModel)->Result<String,Box<
 pub async fn get_game_wise_bet_info_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,game_group_id:i32,date_time:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_GameWiseBetInfo  '{}',{},'{}','{}','{}',{},'{}',{},'{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,game_group_id,date_time);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -1043,7 +1072,7 @@ pub async fn get_game_wise_bet_info_sp(IO_LOG:i32,req_stamp:f64,header_value:Hea
                 json_array.push(out_json);
             }
             let json_string = serde_json::to_string(&json_array)?;
-            println!("{}",json_string);
+            //println!("{}",json_string);
             return Ok(json_string);
         }
     }
@@ -1054,7 +1083,7 @@ pub async fn get_game_wise_bet_info_sp(IO_LOG:i32,req_stamp:f64,header_value:Hea
 pub async fn get_available_race_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,game_group_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_AvailableRace '{}',{},'{}','{}','{}',{},'{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,game_group_id);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -1112,7 +1141,7 @@ pub async fn get_available_race_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderM
 pub async fn get_game_race_details_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,game_group_id:i32,race_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client: tiberius::Client<tokio_util::compat::Compat<tokio::net::TcpStream>> = db_connection().await?;
     let qry = format!("EXEC CLI_GET_GameRaceDetails '{}',{},'{}','{}','{}',{},'{}',{},{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,race_id,game_group_id);
-    println!("{:?}",&qry);
+    //println!("{:?}",&qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -1175,7 +1204,7 @@ pub async fn get_game_race_details_sp(IO_LOG:i32,req_stamp:f64,header_value:Head
 pub async fn get_country_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = "EXEC CLI_GET_Country ";
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -1200,7 +1229,7 @@ pub async fn get_country_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel)->
 pub async fn deposit_init_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type_id:i32,amount:i32,pg_type_id:i32,pg_ref_id:String,pg_default:String,pg_item_desc:String,addmoney_type:i32,device_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_PG_DEPOSIT_INIT  '{}',{},'{}','{}','{}',{},'{}',{},{},{},'{}','{}','{}',{},{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id,amount,pg_type_id,pg_ref_id,pg_default,pg_item_desc,addmoney_type,device_id);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -1233,7 +1262,7 @@ pub async fn deposit_init_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,t
             "callback_url":callback_url
         });
         let json_string = serde_json::to_string(&out_json)?;
-        println!("{}",json_string);
+        //println!("{}",json_string);
         return Ok(json_string);
     }
     }
@@ -1243,7 +1272,7 @@ pub async fn deposit_init_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,t
 pub async fn addmoney_confirm_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,header_value:HeaderModel,type_id:i32,amount:i32,pg_type_id:i32,status:i32,pg_ref_code:String,pg_txn_id:String,pg_ref_id:String,pg_data:String,item_description:String,tax_amount:String,transaction_commission:String,info_string:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_AddMoneyRequest_ConforMation  '{}',{},'{}','{}','{}',{},'{}',{},{},{},{},'{}','{}','{}','{}','{}','{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id,amount,pg_type_id,status,pg_ref_code,pg_txn_id,pg_ref_id,pg_data,item_description,tax_amount,transaction_commission,info_string);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -1266,8 +1295,8 @@ pub async fn addmoney_confirm_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,
             let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
             let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
                 match sms_mail_result{
-                    Ok(x)=>{println!("sms_email_api success")},
-                    Err(e)=>{println!("sms_email_api")}
+                    Ok(x)=>{info!("sms_email_api success")},
+                    Err(e)=>{info!("sms_email_api")}
                 }
         }
         return Ok(json_string);
@@ -1296,8 +1325,8 @@ pub async fn addmoney_confirm_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,
             let sms_email_info:&str=res_value[2][0].try_get(0)?.unwrap_or("null");
             let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
                 match sms_mail_result{
-                    Ok(x)=>{println!("sms_email_api success")},
-                    Err(e)=>{println!("sms_email_api")}
+                    Ok(x)=>{info!("sms_email_api success")},
+                    Err(e)=>{info!("sms_email_api")}
                 }
         }
         return Ok(json_string);
@@ -1308,7 +1337,7 @@ pub async fn addmoney_confirm_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,
 pub async fn vdr_vhr_buy_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,bet_info:String,cli_trans_id:String,total_bet_count:i32,total_amount:String,total_estimated_win:String,requery:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC TRA_VDR_OnlineBetting '{}',{},'{}','{}','{}',{},'{}','{}','{}',{},'{}','{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,bet_info,cli_trans_id,total_bet_count,total_amount,total_estimated_win,requery);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -1349,7 +1378,7 @@ pub async fn vdr_vhr_buy_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,be
                 "Win_Balance":win_balance
             });
             let json_string = serde_json::to_string(&out_json)?;
-            println!("{}",json_string);
+            //println!("{}",json_string);
             return Ok(json_string);
         }
     }
@@ -1359,7 +1388,7 @@ pub async fn vdr_vhr_buy_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,be
 pub async fn vdr_result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,game_group_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_GET_VDRResult  '{}',{},'{}','{}','{}',{},'{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,game_group_id);
-    println!("{}",qry);
+    //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
     }
@@ -1390,7 +1419,7 @@ pub async fn vdr_result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,gam
                 "info_string":info_string
             });
             let json_string = serde_json::to_string(&out_json)?;
-            println!("{}",json_string);
+            //println!("{}",json_string);
             return Ok(json_string);
         }
     }
