@@ -4,6 +4,7 @@ use std::str;
 use std::io::Cursor;
 use ftp::FtpStream;
 use base64::decode;
+use log::error;
 use futures_util::__private::async_await;
 
 pub async fn image_upload(base64_image:String,image_name:String,upload_flag:i32,ftp_host:String,ftp_name:String,ftp_password:String)->Result<String,Box<dyn std::error::Error>> {
@@ -31,24 +32,40 @@ pub async fn image_upload(base64_image:String,image_name:String,upload_flag:i32,
 
     println!("Current directory: {}", ftp_stream.pwd().unwrap());
     if upload_flag == 1{
-        // let _ = ftp_stream.cwd("Suriname/UploadFiles/cashcafe/Kyc_verify").unwrap();
-            let _ = ftp_stream.cwd("UploadFiles/Kyc_verify").unwrap();
+        let _ = ftp_stream.cwd("Suriname/UploadFiles/cashcafe/Kyc_verify").unwrap();
+            // let _ = ftp_stream.cwd("UploadFiles/Kyc_verify").unwrap();
 
         let _ = ftp_stream.put(image_name.as_str(), &mut image_cursor);
         println!("Successfully wrote");
         
     }
     if upload_flag == 2{
-        // let _ = ftp_stream.cwd("Suriname/UploadFiles/cashcafe/Profile").unwrap();
-            let _ = ftp_stream.cwd("UploadFiles/Profile").unwrap();
+        let _ = ftp_stream.cwd("Suriname/UploadFiles/cashcafe/Profile").unwrap();
+            // let _ = ftp_stream.cwd("UploadFiles/Profile").unwrap();
 
         let _ = ftp_stream.put(image_name.as_str(), &mut image_cursor);
         println!("Successfully wrote");
     }
     if upload_flag == 0{
-        // let _ = ftp_stream.cwd("Suriname/UploadFiles/cashcafe/Profile").unwrap();
-            let _ = ftp_stream.cwd("UploadFiles/Profile").unwrap();
-        ftp_stream.rm(&image_name)?;
+        let _ = ftp_stream.cwd("Suriname/UploadFiles/cashcafe/Profile").unwrap();
+            // let _ = ftp_stream.cwd("UploadFiles/Profile").unwrap();
+        let remove_status = ftp_stream.rm(&image_name);
+        match remove_status {
+            Ok(_)=>{}
+            Err(e)=>{
+                let _ = ftp_stream.quit();
+                error!("method : FTP method ,ERROR : {:?}",e);
+                let out_json = json!(
+                    {
+                        "TVN":"tvn",
+                        "Status_id":2,
+                        "Message":"Already deleted"
+                    }
+                );
+                let json_string = serde_json::to_string(&out_json)?;
+                return Ok(json_string);
+            }
+        }
     }
     
     /// --------------------------Local----------------------------------------
