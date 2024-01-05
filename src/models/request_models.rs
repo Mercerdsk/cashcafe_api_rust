@@ -16,6 +16,7 @@ pub struct GlobalConfigModel{
     pub ftp_name:String,
     pub ftp_password:String,
     pub sms_email_url:String,
+    pub sms_email_toggle:i32,
 }
 
 #[derive(Serialize,Deserialize,Debug)]

@@ -12,5 +12,6 @@
     "ftp_host":"192.168.10.225:21",
     "ftp_name":"uitest",
     "ftp_password":"u1Test2*",
-    "sms_email_url":"http://192.168.10.227/CashCafeSmsEmailApi/api/user/sendEmail"
+    "sms_email_url":"http://192.168.10.227/CashCafeSmsEmailApi/api/user/sendEmail",
+    "sms_email_toggle":0
 }

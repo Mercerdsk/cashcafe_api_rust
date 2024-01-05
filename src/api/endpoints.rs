@@ -58,7 +58,8 @@ async fn player_creation_handler(web_config: web::Data<GlobalConfigModel>,info:w
 
     // sms email url
     let sms_email_url:String = web_config.sms_email_url.to_string();
-    let result = player_creation_sp(io_log,req_stamp,sms_email_url,header_value,first_name,last_name,email,dob,password,max_deposite_limit,max_bet_limit,kyc_id,kyc_id_number,postal_code).await;
+    let sms_email_toggle:i32 = web_config.sms_email_toggle;
+    let result = player_creation_sp(sms_email_toggle,io_log,req_stamp,sms_email_url,header_value,first_name,last_name,email,dob,password,max_deposite_limit,max_bet_limit,kyc_id,kyc_id_number,postal_code).await;
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
@@ -332,7 +333,8 @@ async fn withdraw_money_handler(web_config: web::Data<GlobalConfigModel>,info:we
     //json body
     //sms email url
     let sms_email_url = web_config.sms_email_url.to_string();
-    let result = withdraw_money_sp(io_log,req_stamp,sms_email_url,header_value,type_id,amount,pg_type_id,pg_txn_id,pg_ref_id,pg_data,item_desc).await;
+    let sms_email_toggle:i32 = web_config.sms_email_toggle;
+    let result = withdraw_money_sp(sms_email_toggle,io_log,req_stamp,sms_email_url,header_value,type_id,amount,pg_type_id,pg_txn_id,pg_ref_id,pg_data,item_desc).await;
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
@@ -418,7 +420,8 @@ async fn otp_generation_handler(web_config: web::Data<GlobalConfigModel>,info:we
     //json body
     // sms email url
     let sms_email_url = web_config.sms_email_url.to_string();
-    let result = otp_generation_sp(io_log,req_stamp,sms_email_url,header_value,type_id).await;
+    let sms_email_toggle:i32 = web_config.sms_email_toggle;
+    let result = otp_generation_sp(sms_email_toggle,io_log,req_stamp,sms_email_url,header_value,type_id).await;
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
@@ -1050,7 +1053,8 @@ async fn password_change_handler(web_config: web::Data<GlobalConfigModel>,info:w
     //json body
     // sms email url
     let sms_email_url = web_config.sms_email_url.to_string();
-    let result = password_change_sp(io_log,req_stamp,sms_email_url,header_value,old_passsword,new_password,flag).await;
+    let sms_email_toggle:i32 = web_config.sms_email_toggle;
+    let result = password_change_sp(sms_email_toggle,io_log,req_stamp,sms_email_url,header_value,old_passsword,new_password,flag).await;
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
@@ -1483,7 +1487,8 @@ async fn addmoney_conformation_handler(web_config: web::Data<GlobalConfigModel>,
     //json body
     // sms email url
     let sms_email_url = web_config.sms_email_url.to_string();
-    let result = addmoney_confirm_sp(io_log,req_stamp,sms_email_url,header_value,type_id,amount,pg_type_id,status,pg_ref_code,pg_txn_id,pg_ref_id,pg_data,item_description,tax_amount,transaction_commission,info_string).await;
+    let sms_email_toggle:i32 = web_config.sms_email_toggle;
+    let result = addmoney_confirm_sp(sms_email_toggle,io_log,req_stamp,sms_email_url,header_value,type_id,amount,pg_type_id,status,pg_ref_code,pg_txn_id,pg_ref_id,pg_data,item_description,tax_amount,transaction_commission,info_string).await;
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);

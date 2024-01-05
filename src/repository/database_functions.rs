@@ -1,6 +1,6 @@
 use std::default;
 
-use log::info;
+use log::{info,error};
 use serde_json::json;
 
 use crate::repository::database_connection::db_connection;
@@ -10,7 +10,7 @@ use crate::repository::rabbitmq_publisher::queue_publisher;
 use crate::repository::sms_email_function::*;
 
 
-pub async fn player_creation_sp(IO_LOG:i32,req_stamp:f64,sms_email_url:String,header_value:HeaderModel,first_name:String,last_name:String,email:String,dob:String,password:String,max_deposite_limit:i32,max_bet_limit:i32,kyc_id:i32,kyc_id_number:String,postal_code:String)->Result<String,Box<dyn std::error::Error>>{
+pub async fn player_creation_sp(sms_email_toggle:i32,IO_LOG:i32,req_stamp:f64,sms_email_url:String,header_value:HeaderModel,first_name:String,last_name:String,email:String,dob:String,password:String,max_deposite_limit:i32,max_bet_limit:i32,kyc_id:i32,kyc_id_number:String,postal_code:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_INS_PlayerRegistration '{}',{},'{}','{}','{}',{},'{}','{}','{}','{}','{}','{}',{},{},{},'{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,first_name,last_name,email,dob,password,max_deposite_limit,max_bet_limit,kyc_id,kyc_id_number,postal_code);
     //println!("{:?}",&qry);
@@ -33,11 +33,20 @@ pub async fn player_creation_sp(IO_LOG:i32,req_stamp:f64,sms_email_url:String,he
         let json_string = serde_json::to_string(&out_json)?;
         if res_value.len()==2{
             let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
-            let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
+            if sms_email_toggle==1{
+                let sms_mail_result = queue_publisher(sms_email_info.to_string(),sms_email_url).await;    
                 match sms_mail_result{
-                    Ok(x)=>{info!("sms_email_api success")},
-                    Err(e)=>{info!("sms_email_api")}
+                    Ok(x)=>{info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&x)},
+                    Err(e)=>{error!("stamp : {:?},ERROR : {:?}",req_stamp,e)}
                 }
+            }
+            else{
+                let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
+                match sms_mail_result{
+                    Ok(x)=>{info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&x)},
+                    Err(e)=>{error!("stamp : {:?},ERROR : {:?}",req_stamp,e)}
+                }
+            }
         }
     return Ok(json_string); 
     }
@@ -286,7 +295,7 @@ pub async fn add_money_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type
 
 
 
-pub async fn withdraw_money_sp(IO_LOG:i32,req_stamp:f64,sms_email_url:String,header_value:HeaderModel,type_id:i32,amount:i64,pg_type_id:i32,pg_txn_id:String,pg_ref_id:String,pg_data:String,item_des:String)->Result<String,Box<dyn std::error::Error>>{
+pub async fn withdraw_money_sp(sms_email_toggle:i32,IO_LOG:i32,req_stamp:f64,sms_email_url:String,header_value:HeaderModel,type_id:i32,amount:i64,pg_type_id:i32,pg_txn_id:String,pg_ref_id:String,pg_data:String,item_des:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_WithDrawRequest   '{}',{},'{}','{}','{}',{},'{}',{},{},{},'{}','{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id,amount,pg_type_id,pg_txn_id,pg_ref_id,pg_data,item_des);
     //println!("{}",qry);
@@ -335,10 +344,19 @@ pub async fn withdraw_money_sp(IO_LOG:i32,req_stamp:f64,sms_email_url:String,hea
             let json_string = serde_json::to_string(&out_json)?;
             if res_value.len()==3{
                 let sms_email_info:&str=res_value[2][0].try_get(0)?.unwrap_or("null");
-                let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
-                match sms_mail_result{
-                    Ok(x)=>{info!("sms_email_api success")},
-                    Err(e)=>{info!("sms_email_api")}
+                if sms_email_toggle==1{
+                    let sms_mail_result = queue_publisher(sms_email_info.to_string(),sms_email_url).await;    
+                    match sms_mail_result{
+                        Ok(x)=>{info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&x)},
+                        Err(e)=>{error!("stamp : {:?},ERROR : {:?}",req_stamp,e)}
+                    }
+                }
+                else{
+                    let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
+                    match sms_mail_result{
+                        Ok(x)=>{info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&x)},
+                        Err(e)=>{error!("stamp : {:?},ERROR : {:?}",req_stamp,e)}
+                    }
                 }
             }
             return Ok(json_string);
@@ -402,7 +420,7 @@ pub async fn otp_validation_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
     }
 
 
-pub async fn otp_generation_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,header_value:HeaderModel,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
+pub async fn otp_generation_sp(sms_email_toggle:i32,IO_LOG:i32,req_stamp:f64,sms_email_url: String,header_value:HeaderModel,type_id:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_OTPGeneration '{}',{},'{}','{}','{}',{},'{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id);
     //println!("{}",qry);
@@ -425,11 +443,20 @@ pub async fn otp_generation_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,he
         let json_string = serde_json::to_string(&out_json)?;
         if res_value.len()==2{
             let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
-            let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
+            if sms_email_toggle==1{
+                let sms_mail_result = queue_publisher(sms_email_info.to_string(),sms_email_url).await;    
                 match sms_mail_result{
-                    Ok(x)=>{info!("sms_email_api success")},
-                    Err(e)=>{info!("sms_email_api")}
+                    Ok(x)=>{info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&x)},
+                    Err(e)=>{error!("stamp : {:?},ERROR : {:?}",req_stamp,e)}
                 }
+            }
+            else{
+                let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
+                match sms_mail_result{
+                    Ok(x)=>{info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&x)},
+                    Err(e)=>{error!("stamp : {:?},ERROR : {:?}",req_stamp,e)}
+                }
+            }
         }
         return Ok(json_string);
     }
@@ -890,7 +917,7 @@ pub async fn result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,date:St
     }
 
 
-pub async fn password_change_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,header_value:HeaderModel,old_password:String,new_password:String,flag:i32)->Result<String,Box<dyn std::error::Error>>{
+pub async fn password_change_sp(sms_email_toggle:i32,IO_LOG:i32,req_stamp:f64,sms_email_url: String,header_value:HeaderModel,old_password:String,new_password:String,flag:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_UPD_UpdatePassword '{}',{},'{}','{}','{}',{},'{}','{}','{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,old_password,new_password,flag);
     //println!("{}",qry);
@@ -914,19 +941,20 @@ pub async fn password_change_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,h
         if res_value.len()==2{
             //println!("password change");
             let sms_email_info:&str=res_value[1][0].try_get(0)?.unwrap_or("null");
-            let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
+            if sms_email_toggle==1{
+                let sms_mail_result = queue_publisher(sms_email_info.to_string(),sms_email_url).await;    
                 match sms_mail_result{
-                    Ok(x)=>{info!("sms_email_api success")},
-                    Err(e)=>{info!("sms_email_api")}
+                    Ok(x)=>{info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&x)},
+                    Err(e)=>{error!("stamp : {:?},ERROR : {:?}",req_stamp,e)}
                 }
-            // let json_data = json!({
-            //     "data":sms_email_info
-            // });
-            // let sms_mail_result = queue_publisher(json_data).await;
-            // match sms_mail_result{
-            //     Ok(x)=>{info!("sms_email_api success")},
-            //     Err(e)=>{info!("sms_email_api")}
-            // }
+            }
+            else{
+                let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
+                match sms_mail_result{
+                    Ok(x)=>{info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&x)},
+                    Err(e)=>{error!("stamp : {:?},ERROR : {:?}",req_stamp,e)}
+                }
+            }
         }
         return Ok(json_string);
     }
@@ -1269,7 +1297,7 @@ pub async fn deposit_init_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,t
 
 
 
-pub async fn addmoney_confirm_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,header_value:HeaderModel,type_id:i32,amount:i32,pg_type_id:i32,status:i32,pg_ref_code:String,pg_txn_id:String,pg_ref_id:String,pg_data:String,item_description:String,tax_amount:String,transaction_commission:String,info_string:String)->Result<String,Box<dyn std::error::Error>>{
+pub async fn addmoney_confirm_sp(sms_email_toggle:i32,IO_LOG:i32,req_stamp:f64,sms_email_url: String,header_value:HeaderModel,type_id:i32,amount:i32,pg_type_id:i32,status:i32,pg_ref_code:String,pg_txn_id:String,pg_ref_id:String,pg_data:String,item_description:String,tax_amount:String,transaction_commission:String,info_string:String)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
     let qry = format!("EXEC CLI_AddMoneyRequest_ConforMation  '{}',{},'{}','{}','{}',{},'{}',{},{},{},{},'{}','{}','{}','{}','{}','{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id,amount,pg_type_id,status,pg_ref_code,pg_txn_id,pg_ref_id,pg_data,item_description,tax_amount,transaction_commission,info_string);
     //println!("{}",qry);
@@ -1323,11 +1351,20 @@ pub async fn addmoney_confirm_sp(IO_LOG:i32,req_stamp:f64,sms_email_url: String,
         let json_string = serde_json::to_string(&out_json)?;
         if res_value.len()==3{
             let sms_email_info:&str=res_value[2][0].try_get(0)?.unwrap_or("null");
-            let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
+            if sms_email_toggle==1{
+                let sms_mail_result = queue_publisher(sms_email_info.to_string(),sms_email_url).await;    
                 match sms_mail_result{
-                    Ok(x)=>{info!("sms_email_api success")},
-                    Err(e)=>{info!("sms_email_api")}
+                    Ok(x)=>{info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&x)},
+                    Err(e)=>{error!("stamp : {:?},ERROR : {:?}",req_stamp,e)}
                 }
+            }
+            else{
+                let sms_mail_result = sms_email_function(sms_email_info.to_string(),sms_email_url).await;
+                match sms_mail_result{
+                    Ok(x)=>{info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&x)},
+                    Err(e)=>{error!("stamp : {:?},ERROR : {:?}",req_stamp,e)}
+                }
+            }
         }
         return Ok(json_string);
     }
