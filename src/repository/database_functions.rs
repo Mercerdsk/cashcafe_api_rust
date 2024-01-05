@@ -364,9 +364,9 @@ pub async fn withdraw_money_sp(sms_email_toggle:i32,IO_LOG:i32,req_stamp:f64,sms
     }
 
     
-pub async fn otp_validation_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,otp:String)->Result<String,Box<dyn std::error::Error>>{
+pub async fn otp_validation_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,otp:String,flag:i32)->Result<String,Box<dyn std::error::Error>>{
     let mut client = db_connection().await?;
-    let qry = format!("EXEC CLI_OTPValidate '{}',{},'{}','{}','{}',{},'{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,otp);
+    let qry = format!("EXEC CLI_OTPValidate '{}',{},'{}','{}','{}',{},'{}','{}',{}",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,otp,flag);
     //println!("{}",qry);
     if IO_LOG ==0{
         info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);

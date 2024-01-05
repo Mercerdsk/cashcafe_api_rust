@@ -91,6 +91,7 @@ pub struct WithdrawMoneyModel{
 #[derive(Serialize,Deserialize,Debug)]
 pub struct OtpValidation{
     pub otp:String,
+    pub flag:i32,
 }
 
 #[derive(Serialize,Deserialize,Debug)]

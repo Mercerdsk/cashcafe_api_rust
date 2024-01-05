@@ -19,7 +19,7 @@ use reqwest::Client;
 #[get("/get_version/")]
 async fn get_version_handler(req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     
-    let parsed: Value = serde_json::from_str("{\"result\":{\"Date\":\"2024-01-05\",\"Version\":\"Version : 1.0.7\"}}")?;
+    let parsed: Value = serde_json::from_str("{\"result\":{\"Date\":\"2024-01-05\",\"Version\":\"Version : 1.0.8\"}}")?;
     return Ok(web::Json(parsed)) 
     
 }
@@ -364,10 +364,10 @@ async fn otp_validation_handler(web_config: web::Data<GlobalConfigModel>,info:we
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value: HeaderModel = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
-    //IO Logging Section
+    //IO Logging Sectin
     if io_log ==0{
         let data = serde_json::to_string(&info).expect("failed to serializer");
         info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
@@ -375,8 +375,9 @@ async fn otp_validation_handler(web_config: web::Data<GlobalConfigModel>,info:we
     //IO Logging
     // json body
     let otp = info.otp.to_string();
+    let flag = info.flag;
     //json body
-    let result = otp_validation_sp(io_log,req_stamp,header_value,otp).await;
+    let result = otp_validation_sp(io_log,req_stamp,header_value,otp,flag).await;
     match result {
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
