@@ -105,6 +105,7 @@ pub struct PlayerReportsResponse{
     pub withdraw_money:String,
     pub bonus_amount:String,
     pub net_amount:String,
+    pub opening_balance:String,
 }
 #[derive(Serialize,Deserialize,Debug)]
 pub struct PlayerActivityResponse{

@@ -843,7 +843,8 @@ pub async fn player_reports_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel
                     add_money:String::from(i.try_get("Addmoney")?.unwrap_or("")), 
                     withdraw_money:String::from(i.try_get("WithDraw")?.unwrap_or("")), 
                     bonus_amount:String::from(i.try_get("BonusAmount")?.unwrap_or("")), 
-                    net_amount:String::from(i.try_get("NetAmount")?.unwrap_or("")) };
+                    net_amount:String::from(i.try_get("NetAmount")?.unwrap_or("")),
+                    opening_balance:String::from(i.try_get("Openingbalance")?.unwrap_or("")) };
                 json_array.push(out_json);
             }
             let json_string = serde_json::to_string(&json_array)?;
