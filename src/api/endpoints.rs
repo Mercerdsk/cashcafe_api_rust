@@ -1650,3 +1650,100 @@ async fn vdr_result_handler(web_config: web::Data<GlobalConfigModel>,info:web::J
     }
     
 }
+
+#[post("/withdraw_init/")]
+async fn withdraw_init_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<WithdrawInitModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+    let dt = Utc::now();
+    let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
+    let method = "withdraw_init";
+    let io_log = web_config.io_log;
+    let error_log = web_config.error_log;
+    // request logger....
+    //Header Section
+    let header_value = header_extractor(req).await?;
+    // let user_id = req.headers().get("APIKEY").unwrap();
+    //Header Section
+    //IO Logging Section
+    if io_log ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
+    // json body
+    let type_id = info.type_id;
+    let amount = info.amount;
+    let pg_type_id = info.pg_type_id;
+    let pg_ref_id = info.pg_ref_id.to_string();
+    let pg_default = info.pg_default.to_string();
+    let pg_item_desc = info.pg_item_desc.to_string();
+    //json body
+    let result = withdraw_init_sp(io_log,req_stamp,header_value,type_id,amount,pg_type_id,pg_ref_id,pg_default,pg_item_desc).await;
+    match result {
+        Ok(x)=>{
+            let j = format!("{{\"result\":{}}}",x);
+            let parsed: Value = serde_json::from_str(&j)?;
+            if io_log ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
+            return Ok(web::Json(parsed));
+        }
+        Err(e) =>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
+            return Ok(web::Json(parsed)) 
+        }
+    }
+    
+}
+
+
+#[post("/withdraw_confirmation/")]
+async fn withdraw_confirmation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<WithdrawConfirmModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+    let dt = Utc::now();
+    let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
+    let method = "withdraw_confirmation";
+    let io_log = web_config.io_log;
+    let error_log = web_config.error_log;
+    // request logger....
+    //Header Section
+    let header_value = header_extractor(req).await?;
+    // let user_id = req.headers().get("APIKEY").unwrap();
+    //Header Section
+    //IO Logging Section
+    if io_log ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
+    // json body
+    let type_id = info.type_id;
+    let status_flag = info.status_flag;
+    let amount = info.amount;
+    let pg_type_id = info.pg_type_id;
+    let pg_txn_id = info.pg_txn_id.to_string();
+    let pg_ref_id = info.pg_ref_id.to_string();
+    let pg_data = info.pg_data.to_string();
+    let item_desc = info.item_description.to_string();
+    //json body
+    let result = withdraw_confirmation_sp(io_log,req_stamp,header_value,type_id,status_flag,amount,pg_type_id,pg_txn_id,pg_ref_id,pg_data,item_desc).await;
+    match result {
+        Ok(x)=>{
+            let j = format!("{{\"result\":{}}}",x);
+            let parsed: Value = serde_json::from_str(&j)?;
+            if io_log ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
+            return Ok(web::Json(parsed));
+        }
+        Err(e) =>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
+            return Ok(web::Json(parsed)) 
+        }
+    }
+    
+}

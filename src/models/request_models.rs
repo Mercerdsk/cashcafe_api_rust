@@ -271,3 +271,25 @@ pub struct ImageUploadModel{
 pub struct VDRResultModel{
     pub game_group_id:i32,
 }
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct WithdrawInitModel{
+    pub type_id:i32,
+    pub amount:i32,
+    pub pg_type_id:i32,
+    pub pg_ref_id:String,
+    pub pg_default:String,
+    pub pg_item_desc:String,
+}
+
+#[derive(Serialize,Deserialize,Debug)]
+pub struct WithdrawConfirmModel{
+    pub type_id:i32,
+    pub status_flag:i32,
+    pub amount:i32,
+    pub pg_type_id:i32,
+    pub pg_txn_id:String,
+    pub pg_ref_id:String,
+    pub pg_data:String,
+    pub item_description:String,
+}

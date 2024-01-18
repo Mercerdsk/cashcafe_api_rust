@@ -1461,3 +1461,73 @@ pub async fn vdr_result_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,gam
             return Ok(json_string);
         }
     }
+
+
+pub async fn withdraw_init_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type_id:i32,amount:i32,pg_type_id:i32,pg_ref_id:String,pg_default:String,pg_item_desc:String)->Result<String,Box<dyn std::error::Error>>{
+    let mut client = db_connection().await?;
+    let qry = format!("EXEC CLI_PG_WITHDRAW_INIT '{}',{},'{}','{}','{}',{},'{}',{},{},{},'{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id,amount,pg_type_id,pg_ref_id,pg_default,pg_item_desc);
+    //println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
+    let res = client.query(qry,&[]).await?;
+    let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
+        let status_id:&str = res_value[0][0].try_get(1)?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get(0)?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get(2)?.unwrap_or("null");
+        let out_json = json!({
+            "TVN":tvn,
+            "Status_id":status_id,
+            "Message":message
+        });
+        let json_string = serde_json::to_string(&out_json)?;
+        return Ok(json_string);
+    }
+
+pub async fn withdraw_confirmation_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel,type_id:i32,status_flag:i32,amount:i32,pg_type_id:i32,pg_txn_id:String,pg_ref_id:String,pg_data:String,item_desc:String)->Result<String,Box<dyn std::error::Error>>{
+    let mut client = db_connection().await?;
+    let qry = format!("CLI_WithDrawRequest_Conformation '{}',{},'{}','{}','{}',{},'{}',{},{},{},{},'{}','{}','{}','{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address,type_id,status_flag,amount,pg_type_id,pg_txn_id,pg_ref_id,pg_data,item_desc);
+    //println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
+    let res = client.query(qry,&[]).await?;
+    let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
+        let status_id:&str = res_value[0][0].try_get(1)?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get(0)?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get(2)?.unwrap_or("null");
+        if status_id != '0'.to_string(){
+            let out_json = json!({
+                "TVN":tvn,
+                "Status_id":status_id,
+                "Message":message
+            });
+            let json_string = serde_json::to_string(&out_json)?;
+            return Ok(json_string);
+        }
+        else {
+            let pg_ref_id:&str=res_value[1][0].try_get("PG_Ref_Id")?.unwrap_or("");
+            let balance:&str=res_value[1][0].try_get("Balance")?.unwrap_or("");
+            let win_balance:&str=res_value[1][0].try_get("Win_Balance")?.unwrap_or("");
+            let date_time:&str=res_value[1][0].try_get("Date_Time")?.unwrap_or("");
+            
+            let out_json = json!({
+                "TVN":tvn,
+                "Status_id":status_id,
+                "Message":message,
+                "pg_ref_id":pg_ref_id,
+                "balance":balance,
+                "win_balance":win_balance,
+                "date_time":date_time
+            });
+            let json_string = serde_json::to_string(&out_json)?;
+            //println!("{}",json_string);
+            return Ok(json_string);
+        }
+    }

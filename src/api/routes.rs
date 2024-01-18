@@ -41,5 +41,7 @@ pub fn init_routes_v1(cfg: &mut web::ServiceConfig) {
     cfg.service(vdr_vhr_handler);
     cfg.service(image_upload_handler);
     cfg.service(vdr_result_handler);
+    cfg.service(withdraw_init_handler);
+    cfg.service(withdraw_confirmation_handler);
 
 }
