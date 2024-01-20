@@ -16,7 +16,7 @@ pub fn get_popular_games()->Result<String,Box<dyn std::error::Error>>{
     let json_file_path= Path::new("./json_files/fav_games.json");
     let file = File::open(json_file_path)?;
     let games:Vec<FavGameModel>=serde_json::from_reader(file)?;
-    // println!("{:?}",&games);
+    println!("{:?}",&games);
     let games_string = serde_json::to_string(&games)?;
     return Ok(games_string);
 }

@@ -1,5 +1,10 @@
 use serde::{Serialize,Deserialize};
 
+#[derive(Serialize,Deserialize,Debug)]
+pub struct DataModel{
+    pub data:String,
+}
+
 #[derive(Serialize,Deserialize,Debug,Clone)]
 pub struct GlobalConfigModel{
     pub db_host:String,

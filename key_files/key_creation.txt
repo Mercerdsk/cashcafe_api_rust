@@ -1,0 +1,7 @@
+# private key creation #
+
+openssl genrsa -out privatekey.pem 2048
+
+# public key creation #
+
+openssl rsa -in privatekey.pem -out publickey.pem -pubout -outform PEM

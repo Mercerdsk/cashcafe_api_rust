@@ -7,12 +7,14 @@ use  std::fmt::Display;
 use chrono::{Utc,TimeZone};
 use std::path::Path;
 use std::fs::File;
+use crate::encryptions::crypto_functions::{data_encryption,data_decryption};
 use crate::models::request_models::*;
 use crate::api::extractor_functions::header_extractor;
 use crate::repository::database_functions::*;
 use crate::api::get_games_function::*;
 use crate::repository::ftp_functions::*;
 use crate::api::auth_validation::*;
+use crate::encryptions::*;
 use reqwest;
 use reqwest::Error;
 use reqwest::Client;
@@ -105,24 +107,27 @@ async fn protected_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequ
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
-    
 }
 // -------------------------------------------------------------------------
 #[post("/player_creation/")]
-async fn player_creation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PlayerCreationModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn player_creation_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "player creation";
@@ -147,6 +152,8 @@ async fn player_creation_handler(web_config: web::Data<GlobalConfigModel>,info:w
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<PlayerCreationModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header 
     //IO Logging Section
@@ -176,17 +183,21 @@ async fn player_creation_handler(web_config: web::Data<GlobalConfigModel>,info:w
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -194,7 +205,7 @@ async fn player_creation_handler(web_config: web::Data<GlobalConfigModel>,info:w
 
 
 #[post("/player_login/")]
-async fn player_login_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PlayerLoginModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn player_login_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "player login";
@@ -219,6 +230,8 @@ async fn player_login_handler(web_config: web::Data<GlobalConfigModel>,info:web:
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<PlayerLoginModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -237,17 +250,18 @@ async fn player_login_handler(web_config: web::Data<GlobalConfigModel>,info:web:
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
-            // if io_log ==0{
-            //     info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
-            // }
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -295,14 +309,21 @@ async fn get_balance_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRe
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            if io_log ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -311,7 +332,7 @@ async fn get_balance_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRe
 
 
 #[post("/available_games/")]
-async fn available_games_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<AvailableGamesModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn available_games_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "available games";
@@ -336,6 +357,8 @@ async fn available_games_handler(web_config: web::Data<GlobalConfigModel>,info:w
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<AvailableGamesModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -352,17 +375,21 @@ async fn available_games_handler(web_config: web::Data<GlobalConfigModel>,info:w
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -370,7 +397,7 @@ async fn available_games_handler(web_config: web::Data<GlobalConfigModel>,info:w
 
 
 #[post("/payment_init/")]
-async fn payment_init_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PaymentInitModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn payment_init_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "payment init";
@@ -395,6 +422,8 @@ async fn payment_init_handler(web_config: web::Data<GlobalConfigModel>,info:web:
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<PaymentInitModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -415,17 +444,21 @@ async fn payment_init_handler(web_config: web::Data<GlobalConfigModel>,info:web:
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -433,7 +466,7 @@ async fn payment_init_handler(web_config: web::Data<GlobalConfigModel>,info:web:
 
 
 #[post("/addmoney/")]
-async fn add_money_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<AddMoneyModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn add_money_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "add money";
@@ -458,6 +491,8 @@ async fn add_money_handler(web_config: web::Data<GlobalConfigModel>,info:web::Js
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<AddMoneyModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -480,24 +515,28 @@ async fn add_money_handler(web_config: web::Data<GlobalConfigModel>,info:web::Js
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
 }
 
 #[post("/withdrawmoney/")]
-async fn withdraw_money_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<WithdrawMoneyModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn withdraw_money_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "withdraw money";
@@ -522,6 +561,8 @@ async fn withdraw_money_handler(web_config: web::Data<GlobalConfigModel>,info:we
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<WithdrawMoneyModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -547,24 +588,28 @@ async fn withdraw_money_handler(web_config: web::Data<GlobalConfigModel>,info:we
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
 }
 
 #[post("/otpvalidation/")]
-async fn otp_validation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<OtpValidation>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn otp_validation_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "otp validation";
@@ -589,6 +634,8 @@ async fn otp_validation_handler(web_config: web::Data<GlobalConfigModel>,info:we
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<OtpValidation>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Sectin
@@ -606,24 +653,28 @@ async fn otp_validation_handler(web_config: web::Data<GlobalConfigModel>,info:we
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
 }
 
 #[post("/otpgeneration/")]
-async fn otp_generation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<OtpGeneration>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn otp_generation_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "otp generation";
@@ -648,7 +699,8 @@ async fn otp_generation_handler(web_config: web::Data<GlobalConfigModel>,info:we
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
-
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<OtpGeneration>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -668,17 +720,21 @@ async fn otp_generation_handler(web_config: web::Data<GlobalConfigModel>,info:we
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -726,27 +782,99 @@ async fn get_games_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequ
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
 }
 
 #[post("/getpopulargames/")]
-async fn get_fav_games_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<GetFavGamesModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn get_fav_games_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get poplar games";
+    let io_log = web_config.io_log;
+    let error_log = web_config.error_log;
+    // request logger....
+    //Header Section
+    let header_value = header_extractor(req.clone()).await?;
+    // let jwt_val = protected(req).await;
+    // match jwt_val{
+    //     Ok(decrypt_user_id)=>{
+    //         if header_value.user_id != decrypt_user_id{
+    //             if io_log ==0{
+    //                 error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+    //             }
+    //             let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+    //             return Ok(HttpResponse::Unauthorized().json(json_data));
+    //         }
+    //     }
+    //     Err(e)=>{
+    //         let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+    //         return Ok(HttpResponse::Unauthorized().json(json_data));
+    //     }
+    // };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<GetFavGamesModel>(&decrypt_json_string)?;
+    // let user_id = req.headers().get("APIKEY").unwrap();
+    //Header Section
+    //IO Logging Section
+    if io_log ==0{
+        let data = serde_json::to_string(&info).expect("failed to serializer");
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
+    }
+    //IO Logging
+    // json body
+    let game_group_id = info.game_group_id.to_string();
+    //json body
+    let result = get_popular_games();
+    match result {
+        Ok(x)=>{
+            let j = format!("{{\"result\":{}}}",x);
+            let parsed: Value = serde_json::from_str(&j)?;
+            println!("{:?}",parsed);
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            if io_log ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
+            return Ok(HttpResponse::Ok().json(encrypt_json));
+        }
+        Err(e) =>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
+        }
+    }
+    
+}
+
+
+
+
+#[get("/getservertime/")]
+async fn get_server_time_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+    let dt = Utc::now();
+    let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
+    let method = "get server time";
     let io_log = web_config.io_log;
     let error_log = web_config.error_log;
     // request logger....
@@ -768,52 +896,6 @@ async fn get_fav_games_handler(web_config: web::Data<GlobalConfigModel>,info:web
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
-    
-    // let user_id = req.headers().get("APIKEY").unwrap();
-    //Header Section
-    //IO Logging Section
-    if io_log ==0{
-        let data = serde_json::to_string(&info).expect("failed to serializer");
-        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ,BODY : {:?}",req_stamp,method,header_value,data);
-    }
-    //IO Logging
-    // json body
-    let game_group_id = info.game_group_id.to_string();
-    //json body
-    let result = get_popular_games();
-    match result {
-        Ok(x)=>{
-            let j = format!("{{\"result\":{}}}",x);
-            let parsed: Value = serde_json::from_str(&j)?;
-            if io_log ==0{
-                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
-            }
-            return Ok(HttpResponse::Ok().json(parsed));
-        }
-        Err(e) =>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
-        }
-    }
-    
-}
-
-
-
-
-#[get("/getservertime/")]
-async fn get_server_time_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
-    let dt = Utc::now();
-    let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
-    let method = "get server time";
-    let io_log = web_config.io_log;
-    let error_log = web_config.error_log;
-    // request logger....
-    //Header Section
-    let header_value = header_extractor(req).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -829,17 +911,21 @@ async fn get_server_time_handler(web_config: web::Data<GlobalConfigModel>,req:Ht
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -848,7 +934,7 @@ async fn get_server_time_handler(web_config: web::Data<GlobalConfigModel>,req:Ht
 
 
 #[post("/getslotgames/")]
-async fn get_slot_games_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<GetSlotGames>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn get_slot_games_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get slot games";
@@ -873,7 +959,8 @@ async fn get_slot_games_handler(web_config: web::Data<GlobalConfigModel>,info:we
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
-    
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<GetSlotGames>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -890,17 +977,21 @@ async fn get_slot_games_handler(web_config: web::Data<GlobalConfigModel>,info:we
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -945,24 +1036,28 @@ async fn get_player_profile_handler(web_config: web::Data<GlobalConfigModel>,req
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }   
 }
 
 
 #[post("/updplayerprofile/")]
-async fn upd_player_profile_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PlayerProfileUpdate>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn upd_player_profile_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "update player profile";
@@ -988,6 +1083,8 @@ async fn upd_player_profile_handler(web_config: web::Data<GlobalConfigModel>,inf
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<PlayerProfileUpdate>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1008,17 +1105,21 @@ async fn upd_player_profile_handler(web_config: web::Data<GlobalConfigModel>,inf
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -1027,7 +1128,7 @@ async fn upd_player_profile_handler(web_config: web::Data<GlobalConfigModel>,inf
 
 
 #[post("/sellticket/")]
-async fn buy_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<BuyModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn buy_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "sell ticket";
@@ -1052,6 +1153,8 @@ async fn buy_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<Buy
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<BuyModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1075,17 +1178,21 @@ async fn buy_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<Buy
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -1093,7 +1200,7 @@ async fn buy_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<Buy
 
 
 #[post("/kycverify/")]
-async fn kyc_verification_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<KycVerifyModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn kyc_verification_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "kyc verify";
@@ -1118,6 +1225,8 @@ async fn kyc_verification_handler(web_config: web::Data<GlobalConfigModel>,info:
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<KycVerifyModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1144,24 +1253,28 @@ async fn kyc_verification_handler(web_config: web::Data<GlobalConfigModel>,info:
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
 }
 
 #[post("/getcurrentresult/")]
-async fn get_current_result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<GetCurrentResult>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn get_current_result_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get current result";
@@ -1186,6 +1299,8 @@ async fn get_current_result_handler(web_config: web::Data<GlobalConfigModel>,inf
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<GetCurrentResult>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1204,17 +1319,21 @@ async fn get_current_result_handler(web_config: web::Data<GlobalConfigModel>,inf
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -1223,7 +1342,7 @@ async fn get_current_result_handler(web_config: web::Data<GlobalConfigModel>,inf
 
 
 #[post("/getlatestresult/")]
-async fn get_latest_result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<GetLatestResult>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn get_latest_result_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get latest result";
@@ -1248,7 +1367,8 @@ async fn get_latest_result_handler(web_config: web::Data<GlobalConfigModel>,info
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
-    
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<GetLatestResult>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1266,17 +1386,21 @@ async fn get_latest_result_handler(web_config: web::Data<GlobalConfigModel>,info
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -1284,7 +1408,7 @@ async fn get_latest_result_handler(web_config: web::Data<GlobalConfigModel>,info
 
 
 #[post("/transactionhistory/")]
-async fn transaction_history_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<TransHistoryModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn transaction_history_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "transaction history";
@@ -1309,6 +1433,8 @@ async fn transaction_history_handler(web_config: web::Data<GlobalConfigModel>,in
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<TransHistoryModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1328,17 +1454,21 @@ async fn transaction_history_handler(web_config: web::Data<GlobalConfigModel>,in
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -1346,7 +1476,7 @@ async fn transaction_history_handler(web_config: web::Data<GlobalConfigModel>,in
 
 
 #[post("/playerreports/")]
-async fn player_reports_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PlayerReportModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn player_reports_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "player reports";
@@ -1371,6 +1501,8 @@ async fn player_reports_handler(web_config: web::Data<GlobalConfigModel>,info:we
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<PlayerReportModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1390,14 +1522,21 @@ async fn player_reports_handler(web_config: web::Data<GlobalConfigModel>,info:we
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            if io_log ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -1405,7 +1544,7 @@ async fn player_reports_handler(web_config: web::Data<GlobalConfigModel>,info:we
 
 
 #[post("/getresults/")]
-async fn result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<ResultModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn result_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get result";
@@ -1430,6 +1569,8 @@ async fn result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<ResultModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1448,24 +1589,28 @@ async fn result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
 }
 
 #[post("/passwordchange/")]
-async fn password_change_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PasswordModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn password_change_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "password change";
@@ -1490,6 +1635,8 @@ async fn password_change_handler(web_config: web::Data<GlobalConfigModel>,info:w
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<PasswordModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1512,17 +1659,21 @@ async fn password_change_handler(web_config: web::Data<GlobalConfigModel>,info:w
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -1530,7 +1681,7 @@ async fn password_change_handler(web_config: web::Data<GlobalConfigModel>,info:w
 
 
 #[post("/ticketinfo/")]
-async fn ticket_info_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<TicketInfoModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn ticket_info_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "ticket info";
@@ -1555,6 +1706,8 @@ async fn ticket_info_handler(web_config: web::Data<GlobalConfigModel>,info:web::
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<TicketInfoModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1573,24 +1726,28 @@ async fn ticket_info_handler(web_config: web::Data<GlobalConfigModel>,info:web::
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
 }
 
 #[post("/captchaverify/")]
-async fn captcha_verify_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<CaptchaModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn captcha_verify_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "captchaverify";
@@ -1615,6 +1772,8 @@ async fn captcha_verify_handler(web_config: web::Data<GlobalConfigModel>,info:we
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<CaptchaModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1635,12 +1794,17 @@ async fn captcha_verify_handler(web_config: web::Data<GlobalConfigModel>,info:we
     .send().await?;
     let out_res = &response.text().await?;
     let parsed: Value = serde_json::from_str(&out_res)?;
-    return Ok(HttpResponse::Ok().json(parsed));
+    let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            if io_log ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
+            return Ok(HttpResponse::Ok().json(encrypt_json));
 }
 
 
 #[post("/getoddsconfigscheme/")]
-async fn get_odds_config_scheme_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<OddsConfigSchemeModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn get_odds_config_scheme_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get odds config scheme";
@@ -1665,6 +1829,8 @@ async fn get_odds_config_scheme_handler(web_config: web::Data<GlobalConfigModel>
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<OddsConfigSchemeModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1682,17 +1848,21 @@ async fn get_odds_config_scheme_handler(web_config: web::Data<GlobalConfigModel>
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -1734,14 +1904,18 @@ async fn player_login_image_handler(web_config: web::Data<GlobalConfigModel>,req
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -1750,7 +1924,7 @@ async fn player_login_image_handler(web_config: web::Data<GlobalConfigModel>,req
 
 
 #[post("/getgamewisebetinfo/")]
-async fn get_game_wise_bet_info_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<GameWiseBetinfoModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn get_game_wise_bet_info_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get odds config scheme";
@@ -1775,6 +1949,8 @@ async fn get_game_wise_bet_info_handler(web_config: web::Data<GlobalConfigModel>
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<GameWiseBetinfoModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1793,24 +1969,28 @@ async fn get_game_wise_bet_info_handler(web_config: web::Data<GlobalConfigModel>
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
 }
 
 #[post("/get_available_race/")]
-async fn get_available_race_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<AvailableRaceModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn get_available_race_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get_available_race";
@@ -1835,6 +2015,8 @@ async fn get_available_race_handler(web_config: web::Data<GlobalConfigModel>,inf
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<AvailableRaceModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1852,17 +2034,21 @@ async fn get_available_race_handler(web_config: web::Data<GlobalConfigModel>,inf
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -1870,7 +2056,7 @@ async fn get_available_race_handler(web_config: web::Data<GlobalConfigModel>,inf
 
 
 #[post("/get_game_race_details/")]
-async fn get_game_race_details_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<RaceDetailsModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn get_game_race_details_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get_game_race_details";
@@ -1895,6 +2081,8 @@ async fn get_game_race_details_handler(web_config: web::Data<GlobalConfigModel>,
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<RaceDetailsModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1913,17 +2101,21 @@ async fn get_game_race_details_handler(web_config: web::Data<GlobalConfigModel>,
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -1969,21 +2161,25 @@ async fn get_country_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRe
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
 }
 
 #[post("/deposit_init/")]
-async fn deposit_init_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<DepositeInitModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn deposit_init_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "deposit init";
@@ -1992,22 +2188,24 @@ async fn deposit_init_handler(web_config: web::Data<GlobalConfigModel>,info:web:
     // request logger....
     //Header Section
     let header_value = header_extractor(req.clone()).await?;
-    let jwt_val = protected(req).await;
-    match jwt_val{
-        Ok(decrypt_user_id)=>{
-            if header_value.user_id != decrypt_user_id{
-                if io_log ==0{
-                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
-                }
-                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
-                return Ok(HttpResponse::Unauthorized().json(json_data));
-            }
-        }
-        Err(e)=>{
-            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
-            return Ok(HttpResponse::Unauthorized().json(json_data));
-        }
-    };
+    // let jwt_val = protected(req).await;
+    // match jwt_val{
+    //     Ok(decrypt_user_id)=>{
+    //         if header_value.user_id != decrypt_user_id{
+    //             if io_log ==0{
+    //                 error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+    //             }
+    //             let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+    //             return Ok(HttpResponse::Unauthorized().json(json_data));
+    //         }
+    //     }
+    //     Err(e)=>{
+    //         let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+    //         return Ok(HttpResponse::Unauthorized().json(json_data));
+    //     }
+    // };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<DepositeInitModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -2032,17 +2230,21 @@ async fn deposit_init_handler(web_config: web::Data<GlobalConfigModel>,info:web:
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -2050,7 +2252,7 @@ async fn deposit_init_handler(web_config: web::Data<GlobalConfigModel>,info:web:
 
 
 #[post("/addmoney_confirm/")]
-async fn addmoney_conformation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<AddMoneyConformationModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn addmoney_conformation_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "add money confirm";
@@ -2059,22 +2261,24 @@ async fn addmoney_conformation_handler(web_config: web::Data<GlobalConfigModel>,
     // request logger....
     //Header Section
     let header_value = header_extractor(req.clone()).await?;
-    let jwt_val = protected(req).await;
-    match jwt_val{
-        Ok(decrypt_user_id)=>{
-            if header_value.user_id != decrypt_user_id{
-                if io_log ==0{
-                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
-                }
-                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
-                return Ok(HttpResponse::Unauthorized().json(json_data));
-            }
-        }
-        Err(e)=>{
-            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
-            return Ok(HttpResponse::Unauthorized().json(json_data));
-        }
-    };
+    // let jwt_val = protected(req).await;
+    // match jwt_val{
+    //     Ok(decrypt_user_id)=>{
+    //         if header_value.user_id != decrypt_user_id{
+    //             if io_log ==0{
+    //                 error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+    //             }
+    //             let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+    //             return Ok(HttpResponse::Unauthorized().json(json_data));
+    //         }
+    //     }
+    //     Err(e)=>{
+    //         let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+    //         return Ok(HttpResponse::Unauthorized().json(json_data));
+    //     }
+    // };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<AddMoneyConformationModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -2106,17 +2310,21 @@ async fn addmoney_conformation_handler(web_config: web::Data<GlobalConfigModel>,
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -2124,7 +2332,7 @@ async fn addmoney_conformation_handler(web_config: web::Data<GlobalConfigModel>,
 
 
 #[post("/vdr_vhr_buy/")]
-async fn vdr_vhr_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<VDRVHRBuyModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn vdr_vhr_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "vdr_vhr_buy";
@@ -2149,6 +2357,8 @@ async fn vdr_vhr_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<VDRVHRBuyModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -2170,24 +2380,28 @@ async fn vdr_vhr_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
 }
 
 #[post("/image_upload/")]
-async fn image_upload_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<ImageUploadModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn image_upload_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "image upload";
@@ -2212,6 +2426,8 @@ async fn image_upload_handler(web_config: web::Data<GlobalConfigModel>,info:web:
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<ImageUploadModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -2236,17 +2452,21 @@ async fn image_upload_handler(web_config: web::Data<GlobalConfigModel>,info:web:
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -2254,7 +2474,7 @@ async fn image_upload_handler(web_config: web::Data<GlobalConfigModel>,info:web:
 
 
 #[post("/vdr_result/")]
-async fn vdr_result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<VDRResultModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn vdr_result_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "vdr_result";
@@ -2279,6 +2499,8 @@ async fn vdr_result_handler(web_config: web::Data<GlobalConfigModel>,info:web::J
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<VDRResultModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -2295,24 +2517,28 @@ async fn vdr_result_handler(web_config: web::Data<GlobalConfigModel>,info:web::J
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
 }
 
 #[post("/withdraw_init/")]
-async fn withdraw_init_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<WithdrawInitModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn withdraw_init_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "withdraw_init";
@@ -2337,6 +2563,8 @@ async fn withdraw_init_handler(web_config: web::Data<GlobalConfigModel>,info:web
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<WithdrawInitModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -2358,17 +2586,21 @@ async fn withdraw_init_handler(web_config: web::Data<GlobalConfigModel>,info:web
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -2376,7 +2608,7 @@ async fn withdraw_init_handler(web_config: web::Data<GlobalConfigModel>,info:web
 
 
 #[post("/withdraw_confirmation/")]
-async fn withdraw_confirmation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<WithdrawConfirmModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
+async fn withdraw_confirmation_handler(web_config: web::Data<GlobalConfigModel>,ext:web::Json<DataModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "withdraw_confirmation";
@@ -2401,6 +2633,8 @@ async fn withdraw_confirmation_handler(web_config: web::Data<GlobalConfigModel>,
             return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
+    let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    let info=serde_json::from_str::<WithdrawConfirmModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -2424,17 +2658,21 @@ async fn withdraw_confirmation_handler(web_config: web::Data<GlobalConfigModel>,
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(parsed));
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     
@@ -2480,14 +2718,18 @@ async fn logout_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(HttpResponse::Ok().json(parsed));
+            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(encrypt_json));
         }
     }
     

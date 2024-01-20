@@ -518,6 +518,7 @@ dependencies = [
  "jsonwebtoken",
  "log",
  "log2",
+ "openssl",
  "reqwest",
  "serde",
  "serde_json",

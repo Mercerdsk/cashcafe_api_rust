@@ -2,6 +2,7 @@ mod api;
 mod models;
 mod repository;
 mod logger;
+mod encryptions;
 use actix_web::{web, App, HttpServer,http::header,web::Data};
 use actix_cors::Cors;
 use crate::api::routes::*;
