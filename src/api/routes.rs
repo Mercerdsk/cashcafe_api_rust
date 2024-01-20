@@ -5,6 +5,8 @@ use crate::api::endpoints::*;
 pub fn init_routes_v1(cfg: &mut web::ServiceConfig) {
     let kyc_verify_cfg = web::JsonConfig::default().limit(25_097_152);
     let profile_upd_cfg = web::JsonConfig::default().limit(25_097_152);
+    cfg.service(get_token_handler);
+    cfg.service(protected_handler);
     cfg.service(player_creation_handler);
     cfg.service(player_login_handler);
     cfg.service(get_balance_handler);
@@ -43,5 +45,6 @@ pub fn init_routes_v1(cfg: &mut web::ServiceConfig) {
     cfg.service(vdr_result_handler);
     cfg.service(withdraw_init_handler);
     cfg.service(withdraw_confirmation_handler);
+    cfg.service(logout_handler);
 
 }

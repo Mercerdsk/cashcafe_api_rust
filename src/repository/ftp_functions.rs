@@ -32,23 +32,23 @@ pub async fn image_upload(base64_image:String,image_name:String,upload_flag:i32,
 
     println!("Current directory: {}", ftp_stream.pwd().unwrap());
     if upload_flag == 1{
-        // let _ = ftp_stream.cwd("Suriname/UploadFiles/cashcafe/Kyc_verify").unwrap();
-            let _ = ftp_stream.cwd("UploadFiles/Kyc_verify").unwrap();
+        let _ = ftp_stream.cwd("Suriname/UploadFiles/cashcafe/Kyc_verify").unwrap();
+            // let _ = ftp_stream.cwd("UploadFiles/Kyc_verify").unwrap();
 
         let _ = ftp_stream.put(image_name.as_str(), &mut image_cursor);
         println!("Successfully wrote");
         
     }
     if upload_flag == 2{
-        // let _ = ftp_stream.cwd("Suriname/UploadFiles/cashcafe/Profile").unwrap();
-            let _ = ftp_stream.cwd("UploadFiles/Profile").unwrap();
+        let _ = ftp_stream.cwd("Suriname/UploadFiles/cashcafe/Profile").unwrap();
+            // let _ = ftp_stream.cwd("UploadFiles/Profile").unwrap();
 
         let _ = ftp_stream.put(image_name.as_str(), &mut image_cursor);
         println!("Successfully wrote");
     }
     if upload_flag == 0{
-        // let _ = ftp_stream.cwd("Suriname/UploadFiles/cashcafe/Profile").unwrap();
-            let _ = ftp_stream.cwd("UploadFiles/Profile").unwrap();
+        let _ = ftp_stream.cwd("Suriname/UploadFiles/cashcafe/Profile").unwrap();
+            // let _ = ftp_stream.cwd("UploadFiles/Profile").unwrap();
         let remove_status = ftp_stream.rm(&image_name);
         match remove_status {
             Ok(_)=>{}

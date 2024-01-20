@@ -1,6 +1,7 @@
-use actix_web::{post,get, web,Result, Responder,http::header,HttpRequest,FromRequest};
+use actix_web::{post,get,HttpResponse, web,Result, Responder,http::header,HttpRequest,http::StatusCode};
 use log::error;
 use log::info;
+use serde_json::json;
 use serde_json::Value;
 use  std::fmt::Display;
 use chrono::{Utc,TimeZone};
@@ -11,6 +12,7 @@ use crate::api::extractor_functions::header_extractor;
 use crate::repository::database_functions::*;
 use crate::api::get_games_function::*;
 use crate::repository::ftp_functions::*;
+use crate::api::auth_validation::*;
 use reqwest;
 use reqwest::Error;
 use reqwest::Client;
@@ -25,6 +27,103 @@ async fn get_version_handler(req:HttpRequest)-> Result<impl Responder,Box<dyn st
 }
 // ---------------------------------
 
+// ---------------------------------JWT Token-------------------------------
+#[get("/get_token/")]
+async fn get_token_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+    let dt = Utc::now();
+    let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
+    let method = "get token";
+    let io_log = web_config.io_log;
+    let error_log = web_config.error_log;
+    // request logger....
+    info!("{},,,,,{}",req_stamp,method);
+    //Header Section
+    let header_value = header_extractor(req).await?;
+    //IO Logging Section
+    if io_log ==0{
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ",req_stamp,method,header_value);
+    }
+    //IO Logging
+
+    // let user_id = req.headers().get("APIKEY").unwrap();
+    //Header Section
+    let result = generate_token(header_value.user_id).await;
+    match result {
+        Ok(x)=>{
+            let json_data = json!({"token":x});
+            return Ok(web::Json(json_data));
+        }
+        Err(e) =>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
+            return Err(e)
+        }
+    }
+    
+}
+
+#[get("/protected/")]
+async fn protected_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+    let dt = Utc::now();
+    let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
+    let method = "get server time";
+    let io_log = web_config.io_log;
+    let error_log = web_config.error_log;
+    // request logger....
+    //Header Section
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
+    // let user_id = req.headers().get("APIKEY").unwrap();
+    //Header Section
+    //IO Logging Section
+    if io_log ==0{
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+    }
+    //IO Logging
+    // json body
+    // let game_group_id = info.game_group_id.to_string();
+    //json body
+    let result = get_server_time_sp(io_log,req_stamp,header_value).await;
+    match result {
+        Ok(x)=>{
+            let j = format!("{{\"result\":{}}}",x);
+            let parsed: Value = serde_json::from_str(&j)?;
+            if io_log ==0{
+                info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
+            }
+            return Ok(web::Json(parsed));
+        }
+        Err(e) =>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
+            return Ok(web::Json(parsed)) 
+        }
+    }
+    
+}
+// -------------------------------------------------------------------------
 #[post("/player_creation/")]
 async fn player_creation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PlayerCreationModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
     let dt = Utc::now();
@@ -34,7 +133,7 @@ async fn player_creation_handler(web_config: web::Data<GlobalConfigModel>,info:w
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header 
     //IO Logging Section
@@ -90,7 +189,26 @@ async fn player_login_handler(web_config: web::Data<GlobalConfigModel>,info:web:
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -137,7 +255,26 @@ async fn get_balance_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRe
     // request logger....
     info!("{},,,,,{}",req_stamp,method);
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     //IO Logging Section
     if io_log ==0{
         info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ",req_stamp,method,header_value);
@@ -175,7 +312,7 @@ async fn available_games_handler(web_config: web::Data<GlobalConfigModel>,info:w
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -218,7 +355,26 @@ async fn payment_init_handler(web_config: web::Data<GlobalConfigModel>,info:web:
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -265,7 +421,26 @@ async fn add_money_handler(web_config: web::Data<GlobalConfigModel>,info:web::Js
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -313,7 +488,26 @@ async fn withdraw_money_handler(web_config: web::Data<GlobalConfigModel>,info:we
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -364,7 +558,26 @@ async fn otp_validation_handler(web_config: web::Data<GlobalConfigModel>,info:we
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value: HeaderModel = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Sectin
@@ -407,7 +620,27 @@ async fn otp_generation_handler(web_config: web::Data<GlobalConfigModel>,info:we
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Err(e) 
+        }
+    };
+
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -494,7 +727,8 @@ async fn get_fav_games_handler(web_config: web::Data<GlobalConfigModel>,info:web
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -582,7 +816,8 @@ async fn get_slot_games_handler(web_config: web::Data<GlobalConfigModel>,info:we
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -625,7 +860,26 @@ async fn get_player_profile_handler(web_config: web::Data<GlobalConfigModel>,req
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -664,7 +918,26 @@ async fn upd_player_profile_handler(web_config: web::Data<GlobalConfigModel>,inf
     // let data = serde_json::to_string(&info).expect("failed to serializer");
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -712,7 +985,26 @@ async fn buy_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<Buy
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -762,7 +1054,26 @@ async fn kyc_verification_handler(web_config: web::Data<GlobalConfigModel>,info:
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -814,7 +1125,7 @@ async fn get_current_result_handler(web_config: web::Data<GlobalConfigModel>,inf
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -860,7 +1171,8 @@ async fn get_latest_result_handler(web_config: web::Data<GlobalConfigModel>,info
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -904,7 +1216,26 @@ async fn transaction_history_handler(web_config: web::Data<GlobalConfigModel>,in
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -950,7 +1281,26 @@ async fn player_reports_handler(web_config: web::Data<GlobalConfigModel>,info:we
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -993,7 +1343,26 @@ async fn result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1037,7 +1406,26 @@ async fn password_change_handler(web_config: web::Data<GlobalConfigModel>,info:w
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1086,7 +1474,26 @@ async fn ticket_info_handler(web_config: web::Data<GlobalConfigModel>,info:web::
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1130,7 +1537,26 @@ async fn captcha_verify_handler(web_config: web::Data<GlobalConfigModel>,info:we
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1164,7 +1590,26 @@ async fn get_odds_config_scheme_handler(web_config: web::Data<GlobalConfigModel>
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1208,7 +1653,26 @@ async fn player_login_image_handler(web_config: web::Data<GlobalConfigModel>,req
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1242,7 +1706,26 @@ async fn get_game_wise_bet_info_handler(web_config: web::Data<GlobalConfigModel>
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1286,7 +1769,26 @@ async fn get_available_race_handler(web_config: web::Data<GlobalConfigModel>,inf
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1330,7 +1832,26 @@ async fn get_game_race_details_handler(web_config: web::Data<GlobalConfigModel>,
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1375,7 +1896,26 @@ async fn get_country_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRe
     // request logger....
     info!("{},,,,,{}",req_stamp,method);
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     //IO Logging Section
     if io_log ==0{
         info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ",req_stamp,method,header_value);
@@ -1411,7 +1951,26 @@ async fn deposit_init_handler(web_config: web::Data<GlobalConfigModel>,info:web:
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1462,7 +2021,26 @@ async fn addmoney_conformation_handler(web_config: web::Data<GlobalConfigModel>,
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1520,7 +2098,26 @@ async fn vdr_vhr_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1567,7 +2164,26 @@ async fn image_upload_handler(web_config: web::Data<GlobalConfigModel>,info:web:
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1618,7 +2234,26 @@ async fn vdr_result_handler(web_config: web::Data<GlobalConfigModel>,info:web::J
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1660,7 +2295,26 @@ async fn withdraw_init_handler(web_config: web::Data<GlobalConfigModel>,info:web
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1708,7 +2362,26 @@ async fn withdraw_confirmation_handler(web_config: web::Data<GlobalConfigModel>,
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+                return Ok(web::Json(json_data));
+            }
+        }
+        Err(e)=>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+            return Ok(web::Json(json_data)) 
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1735,6 +2408,62 @@ async fn withdraw_confirmation_handler(web_config: web::Data<GlobalConfigModel>,
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
+            return Ok(web::Json(parsed));
+        }
+        Err(e) =>{
+            if error_log ==0{
+                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+            }
+            let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
+            return Ok(web::Json(parsed)) 
+        }
+    }
+    
+}
+
+#[get("/logout/")]
+async fn logout_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+    let dt = Utc::now();
+    let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
+    let method = "log out";
+    let io_log = web_config.io_log;
+    let error_log = web_config.error_log;
+    // request logger....
+    info!("{},,,,,{}",req_stamp,method);
+    //Header Section
+    let header_value = header_extractor(req.clone()).await?;
+    // let jwt_val = protected(req).await;
+    // match jwt_val{
+    //     Ok(decrypt_user_id)=>{
+    //         if header_value.user_id != decrypt_user_id{
+    //             if io_log ==0{
+    //                 info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+    //             }
+    //             let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
+    //             return Ok(web::Json(json_data));
+    //         }
+    //     }
+    //     Err(e)=>{
+    //         if error_log ==0{
+    //             error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
+    //         }
+    //         let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
+    //         return Ok(web::Json(json_data)) 
+    //     }
+    // };
+    //IO Logging Section
+    if io_log ==0{
+        info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ",req_stamp,method,header_value);
+    }
+    //IO Logging
+
+    // let user_id = req.headers().get("APIKEY").unwrap();
+    //Header Section
+    let result = logout_sp(io_log,req_stamp,header_value).await;
+    match result {
+        Ok(x)=>{
+            let j = format!("{{\"result\":{}}}",x);
+            let parsed: Value = serde_json::from_str(&j)?;
             return Ok(web::Json(parsed));
         }
         Err(e) =>{

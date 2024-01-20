@@ -1531,3 +1531,30 @@ pub async fn withdraw_confirmation_sp(IO_LOG:i32,req_stamp:f64,header_value:Head
             return Ok(json_string);
         }
     }
+
+
+
+pub async fn logout_sp(IO_LOG:i32,req_stamp:f64,header_value:HeaderModel)->Result<String,Box<dyn std::error::Error>>{
+    let mut client = db_connection().await?;
+    let qry = format!("EXEC CLI_GET_Balance '{}',{},'{}','{}','{}',{},'{}'",header_value.user_id,header_value.channel_id,header_value.version,header_value.TVN,header_value.SNO,header_value.language_id,header_value.ip_address);
+    //println!("{}",qry);
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-REQUEST ,QUERY : {:?}",req_stamp,&qry);
+    }
+    let res = client.query(qry,&[]).await?;
+    let res_value=res.into_results().await?;
+    if IO_LOG ==0{
+        info!("STAMP : {:?}, DB-RESPONSE ,RESULT-SET : {:?}",req_stamp,&res_value);
+    }
+        let status_id:&str = res_value[0][0].try_get("Status_Id")?.unwrap_or("null");
+        let tvn:&str = res_value[0][0].try_get("TVN")?.unwrap_or("null");
+        let message:&str = res_value[0][0].try_get("Message")?.unwrap_or("null");
+        
+            let out_json = json!({
+                "TVN":tvn,
+                "Status_id":status_id,
+                "Message":message
+            });
+            let json_string = serde_json::to_string(&out_json)?;
+            return Ok(json_string);
+    }
