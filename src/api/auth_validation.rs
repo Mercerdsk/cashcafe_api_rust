@@ -41,6 +41,5 @@ pub async fn protected(req: HttpRequest) -> Result<String,Box<dyn std::error::Er
             }
         }
     }
-
-    return Ok("Not Authorized".to_string().into());
+    return Err("Not Authorized".to_string().into());
 }

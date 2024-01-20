@@ -58,14 +58,14 @@ async fn get_token_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequ
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Err(e)
+            return Err(e);
         }
     }
     
 }
 
 #[get("/protected/")]
-async fn protected_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn protected_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)->Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get server time";
@@ -79,18 +79,15 @@ async fn protected_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequ
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -111,21 +108,21 @@ async fn protected_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequ
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
 }
 // -------------------------------------------------------------------------
 #[post("/player_creation/")]
-async fn player_creation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PlayerCreationModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn player_creation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PlayerCreationModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "player creation";
@@ -134,6 +131,22 @@ async fn player_creation_handler(web_config: web::Data<GlobalConfigModel>,info:w
     // request logger....
     //Header Section
     let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
+            }
+        }
+        Err(e)=>{
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header 
     //IO Logging Section
@@ -166,14 +179,14 @@ async fn player_creation_handler(web_config: web::Data<GlobalConfigModel>,info:w
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -181,7 +194,7 @@ async fn player_creation_handler(web_config: web::Data<GlobalConfigModel>,info:w
 
 
 #[post("/player_login/")]
-async fn player_login_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PlayerLoginModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn player_login_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PlayerLoginModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "player login";
@@ -195,18 +208,15 @@ async fn player_login_handler(web_config: web::Data<GlobalConfigModel>,info:web:
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -230,14 +240,14 @@ async fn player_login_handler(web_config: web::Data<GlobalConfigModel>,info:web:
             // if io_log ==0{
             //     info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             // }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -246,7 +256,7 @@ async fn player_login_handler(web_config: web::Data<GlobalConfigModel>,info:web:
 
 
 #[get("/get_balance/")]
-async fn get_balance_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn get_balance_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get balance";
@@ -261,18 +271,15 @@ async fn get_balance_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRe
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     //IO Logging Section
@@ -288,14 +295,14 @@ async fn get_balance_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRe
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -304,7 +311,7 @@ async fn get_balance_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRe
 
 
 #[post("/available_games/")]
-async fn available_games_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<AvailableGamesModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn available_games_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<AvailableGamesModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "available games";
@@ -313,6 +320,22 @@ async fn available_games_handler(web_config: web::Data<GlobalConfigModel>,info:w
     // request logger....
     //Header Section
     let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
+            }
+        }
+        Err(e)=>{
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -332,14 +355,14 @@ async fn available_games_handler(web_config: web::Data<GlobalConfigModel>,info:w
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -347,7 +370,7 @@ async fn available_games_handler(web_config: web::Data<GlobalConfigModel>,info:w
 
 
 #[post("/payment_init/")]
-async fn payment_init_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PaymentInitModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn payment_init_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PaymentInitModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "payment init";
@@ -361,18 +384,15 @@ async fn payment_init_handler(web_config: web::Data<GlobalConfigModel>,info:web:
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -398,14 +418,14 @@ async fn payment_init_handler(web_config: web::Data<GlobalConfigModel>,info:web:
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -413,7 +433,7 @@ async fn payment_init_handler(web_config: web::Data<GlobalConfigModel>,info:web:
 
 
 #[post("/addmoney/")]
-async fn add_money_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<AddMoneyModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn add_money_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<AddMoneyModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "add money";
@@ -427,18 +447,15 @@ async fn add_money_handler(web_config: web::Data<GlobalConfigModel>,info:web::Js
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -466,21 +483,21 @@ async fn add_money_handler(web_config: web::Data<GlobalConfigModel>,info:web::Js
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
 }
 
 #[post("/withdrawmoney/")]
-async fn withdraw_money_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<WithdrawMoneyModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn withdraw_money_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<WithdrawMoneyModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "withdraw money";
@@ -494,18 +511,15 @@ async fn withdraw_money_handler(web_config: web::Data<GlobalConfigModel>,info:we
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -536,21 +550,21 @@ async fn withdraw_money_handler(web_config: web::Data<GlobalConfigModel>,info:we
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
 }
 
 #[post("/otpvalidation/")]
-async fn otp_validation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<OtpValidation>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn otp_validation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<OtpValidation>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "otp validation";
@@ -564,18 +578,15 @@ async fn otp_validation_handler(web_config: web::Data<GlobalConfigModel>,info:we
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -598,21 +609,21 @@ async fn otp_validation_handler(web_config: web::Data<GlobalConfigModel>,info:we
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
 }
 
 #[post("/otpgeneration/")]
-async fn otp_generation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<OtpGeneration>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn otp_generation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<OtpGeneration>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "otp generation";
@@ -626,18 +637,15 @@ async fn otp_generation_handler(web_config: web::Data<GlobalConfigModel>,info:we
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Err(e) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
 
@@ -663,21 +671,21 @@ async fn otp_generation_handler(web_config: web::Data<GlobalConfigModel>,info:we
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
 }
 
 #[get("/getgamefamily/")]
-async fn get_games_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn get_games_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get game family";
@@ -686,7 +694,23 @@ async fn get_games_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequ
     // let data = serde_json::to_string(&info).expect("failed to serializer");
     // request logger....
     //Header Section
-    let header_value = header_extractor(req).await?;
+    let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
+            }
+        }
+        Err(e)=>{
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -705,21 +729,21 @@ async fn get_games_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequ
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
 }
 
 #[post("/getpopulargames/")]
-async fn get_fav_games_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<GetFavGamesModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn get_fav_games_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<GetFavGamesModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get poplar games";
@@ -728,6 +752,22 @@ async fn get_fav_games_handler(web_config: web::Data<GlobalConfigModel>,info:web
     // request logger....
     //Header Section
     let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
+            }
+        }
+        Err(e)=>{
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
+        }
+    };
     
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
@@ -748,14 +788,14 @@ async fn get_fav_games_handler(web_config: web::Data<GlobalConfigModel>,info:web
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -765,7 +805,7 @@ async fn get_fav_games_handler(web_config: web::Data<GlobalConfigModel>,info:web
 
 
 #[get("/getservertime/")]
-async fn get_server_time_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn get_server_time_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get server time";
@@ -792,14 +832,14 @@ async fn get_server_time_handler(web_config: web::Data<GlobalConfigModel>,req:Ht
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -808,7 +848,7 @@ async fn get_server_time_handler(web_config: web::Data<GlobalConfigModel>,req:Ht
 
 
 #[post("/getslotgames/")]
-async fn get_slot_games_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<GetSlotGames>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn get_slot_games_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<GetSlotGames>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get slot games";
@@ -817,6 +857,22 @@ async fn get_slot_games_handler(web_config: web::Data<GlobalConfigModel>,info:we
     // request logger....
     //Header Section
     let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
+            }
+        }
+        Err(e)=>{
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
+        }
+    };
     
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
@@ -837,14 +893,14 @@ async fn get_slot_games_handler(web_config: web::Data<GlobalConfigModel>,info:we
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -852,7 +908,7 @@ async fn get_slot_games_handler(web_config: web::Data<GlobalConfigModel>,info:we
 
 
 #[get("/getplayerprofile/")]
-async fn get_player_profile_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn get_player_profile_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get player profile";
@@ -866,18 +922,15 @@ async fn get_player_profile_handler(web_config: web::Data<GlobalConfigModel>,req
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -895,21 +948,21 @@ async fn get_player_profile_handler(web_config: web::Data<GlobalConfigModel>,req
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }   
 }
 
 
 #[post("/updplayerprofile/")]
-async fn upd_player_profile_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PlayerProfileUpdate>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn upd_player_profile_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PlayerProfileUpdate>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "update player profile";
@@ -924,18 +977,15 @@ async fn upd_player_profile_handler(web_config: web::Data<GlobalConfigModel>,inf
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -961,14 +1011,14 @@ async fn upd_player_profile_handler(web_config: web::Data<GlobalConfigModel>,inf
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -977,7 +1027,7 @@ async fn upd_player_profile_handler(web_config: web::Data<GlobalConfigModel>,inf
 
 
 #[post("/sellticket/")]
-async fn buy_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<BuyModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn buy_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<BuyModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "sell ticket";
@@ -991,18 +1041,15 @@ async fn buy_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<Buy
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -1031,14 +1078,14 @@ async fn buy_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<Buy
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -1046,7 +1093,7 @@ async fn buy_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<Buy
 
 
 #[post("/kycverify/")]
-async fn kyc_verification_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<KycVerifyModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn kyc_verification_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<KycVerifyModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "kyc verify";
@@ -1060,18 +1107,15 @@ async fn kyc_verification_handler(web_config: web::Data<GlobalConfigModel>,info:
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -1103,21 +1147,21 @@ async fn kyc_verification_handler(web_config: web::Data<GlobalConfigModel>,info:
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
 }
 
 #[post("/getcurrentresult/")]
-async fn get_current_result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<GetCurrentResult>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn get_current_result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<GetCurrentResult>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get current result";
@@ -1126,6 +1170,22 @@ async fn get_current_result_handler(web_config: web::Data<GlobalConfigModel>,inf
     // request logger....
     //Header Section
     let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
+            }
+        }
+        Err(e)=>{
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
+        }
+    };
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
     //IO Logging Section
@@ -1147,14 +1207,14 @@ async fn get_current_result_handler(web_config: web::Data<GlobalConfigModel>,inf
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -1163,7 +1223,7 @@ async fn get_current_result_handler(web_config: web::Data<GlobalConfigModel>,inf
 
 
 #[post("/getlatestresult/")]
-async fn get_latest_result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<GetLatestResult>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn get_latest_result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<GetLatestResult>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get latest result";
@@ -1172,6 +1232,22 @@ async fn get_latest_result_handler(web_config: web::Data<GlobalConfigModel>,info
     // request logger....
     //Header Section
     let header_value = header_extractor(req.clone()).await?;
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
+            }
+        }
+        Err(e)=>{
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
+        }
+    };
     
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
@@ -1193,14 +1269,14 @@ async fn get_latest_result_handler(web_config: web::Data<GlobalConfigModel>,info
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -1208,7 +1284,7 @@ async fn get_latest_result_handler(web_config: web::Data<GlobalConfigModel>,info
 
 
 #[post("/transactionhistory/")]
-async fn transaction_history_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<TransHistoryModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn transaction_history_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<TransHistoryModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "transaction history";
@@ -1222,18 +1298,15 @@ async fn transaction_history_handler(web_config: web::Data<GlobalConfigModel>,in
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -1258,14 +1331,14 @@ async fn transaction_history_handler(web_config: web::Data<GlobalConfigModel>,in
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -1273,7 +1346,7 @@ async fn transaction_history_handler(web_config: web::Data<GlobalConfigModel>,in
 
 
 #[post("/playerreports/")]
-async fn player_reports_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PlayerReportModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn player_reports_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PlayerReportModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "player reports";
@@ -1287,18 +1360,15 @@ async fn player_reports_handler(web_config: web::Data<GlobalConfigModel>,info:we
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -1320,14 +1390,14 @@ async fn player_reports_handler(web_config: web::Data<GlobalConfigModel>,info:we
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -1335,7 +1405,7 @@ async fn player_reports_handler(web_config: web::Data<GlobalConfigModel>,info:we
 
 
 #[post("/getresults/")]
-async fn result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<ResultModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<ResultModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get result";
@@ -1349,18 +1419,15 @@ async fn result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -1384,21 +1451,21 @@ async fn result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
 }
 
 #[post("/passwordchange/")]
-async fn password_change_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PasswordModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn password_change_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<PasswordModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "password change";
@@ -1412,18 +1479,15 @@ async fn password_change_handler(web_config: web::Data<GlobalConfigModel>,info:w
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -1451,14 +1515,14 @@ async fn password_change_handler(web_config: web::Data<GlobalConfigModel>,info:w
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -1466,7 +1530,7 @@ async fn password_change_handler(web_config: web::Data<GlobalConfigModel>,info:w
 
 
 #[post("/ticketinfo/")]
-async fn ticket_info_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<TicketInfoModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn ticket_info_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<TicketInfoModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "ticket info";
@@ -1480,18 +1544,15 @@ async fn ticket_info_handler(web_config: web::Data<GlobalConfigModel>,info:web::
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -1515,21 +1576,21 @@ async fn ticket_info_handler(web_config: web::Data<GlobalConfigModel>,info:web::
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
 }
 
 #[post("/captchaverify/")]
-async fn captcha_verify_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<CaptchaModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn captcha_verify_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<CaptchaModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "captchaverify";
@@ -1543,18 +1604,15 @@ async fn captcha_verify_handler(web_config: web::Data<GlobalConfigModel>,info:we
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -1577,12 +1635,12 @@ async fn captcha_verify_handler(web_config: web::Data<GlobalConfigModel>,info:we
     .send().await?;
     let out_res = &response.text().await?;
     let parsed: Value = serde_json::from_str(&out_res)?;
-    return Ok(web::Json(parsed));
+    return Ok(HttpResponse::Ok().json(parsed));
 }
 
 
 #[post("/getoddsconfigscheme/")]
-async fn get_odds_config_scheme_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<OddsConfigSchemeModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn get_odds_config_scheme_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<OddsConfigSchemeModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get odds config scheme";
@@ -1596,18 +1654,15 @@ async fn get_odds_config_scheme_handler(web_config: web::Data<GlobalConfigModel>
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -1630,14 +1685,14 @@ async fn get_odds_config_scheme_handler(web_config: web::Data<GlobalConfigModel>
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -1645,7 +1700,7 @@ async fn get_odds_config_scheme_handler(web_config: web::Data<GlobalConfigModel>
 
 
 #[post("/playerloginimage/")]
-async fn player_login_image_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn player_login_image_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "player login image";
@@ -1659,18 +1714,15 @@ async fn player_login_image_handler(web_config: web::Data<GlobalConfigModel>,req
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -1682,14 +1734,14 @@ async fn player_login_image_handler(web_config: web::Data<GlobalConfigModel>,req
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -1698,7 +1750,7 @@ async fn player_login_image_handler(web_config: web::Data<GlobalConfigModel>,req
 
 
 #[post("/getgamewisebetinfo/")]
-async fn get_game_wise_bet_info_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<GameWiseBetinfoModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn get_game_wise_bet_info_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<GameWiseBetinfoModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get odds config scheme";
@@ -1712,18 +1764,15 @@ async fn get_game_wise_bet_info_handler(web_config: web::Data<GlobalConfigModel>
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -1747,21 +1796,21 @@ async fn get_game_wise_bet_info_handler(web_config: web::Data<GlobalConfigModel>
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
 }
 
 #[post("/get_available_race/")]
-async fn get_available_race_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<AvailableRaceModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn get_available_race_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<AvailableRaceModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get_available_race";
@@ -1775,18 +1824,15 @@ async fn get_available_race_handler(web_config: web::Data<GlobalConfigModel>,inf
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -1809,14 +1855,14 @@ async fn get_available_race_handler(web_config: web::Data<GlobalConfigModel>,inf
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -1824,7 +1870,7 @@ async fn get_available_race_handler(web_config: web::Data<GlobalConfigModel>,inf
 
 
 #[post("/get_game_race_details/")]
-async fn get_game_race_details_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<RaceDetailsModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn get_game_race_details_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<RaceDetailsModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get_game_race_details";
@@ -1838,18 +1884,15 @@ async fn get_game_race_details_handler(web_config: web::Data<GlobalConfigModel>,
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -1873,21 +1916,21 @@ async fn get_game_race_details_handler(web_config: web::Data<GlobalConfigModel>,
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
 }
 
 #[get("/get_country/")]
-async fn get_country_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn get_country_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "get country";
@@ -1902,18 +1945,15 @@ async fn get_country_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRe
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     //IO Logging Section
@@ -1929,21 +1969,21 @@ async fn get_country_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRe
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
 }
 
 #[post("/deposit_init/")]
-async fn deposit_init_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<DepositeInitModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn deposit_init_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<DepositeInitModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "deposit init";
@@ -1957,18 +1997,15 @@ async fn deposit_init_handler(web_config: web::Data<GlobalConfigModel>,info:web:
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -1998,14 +2035,14 @@ async fn deposit_init_handler(web_config: web::Data<GlobalConfigModel>,info:web:
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -2013,7 +2050,7 @@ async fn deposit_init_handler(web_config: web::Data<GlobalConfigModel>,info:web:
 
 
 #[post("/addmoney_confirm/")]
-async fn addmoney_conformation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<AddMoneyConformationModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn addmoney_conformation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<AddMoneyConformationModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "add money confirm";
@@ -2027,18 +2064,15 @@ async fn addmoney_conformation_handler(web_config: web::Data<GlobalConfigModel>,
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -2075,14 +2109,14 @@ async fn addmoney_conformation_handler(web_config: web::Data<GlobalConfigModel>,
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -2090,7 +2124,7 @@ async fn addmoney_conformation_handler(web_config: web::Data<GlobalConfigModel>,
 
 
 #[post("/vdr_vhr_buy/")]
-async fn vdr_vhr_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<VDRVHRBuyModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn vdr_vhr_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<VDRVHRBuyModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "vdr_vhr_buy";
@@ -2104,18 +2138,15 @@ async fn vdr_vhr_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -2142,21 +2173,21 @@ async fn vdr_vhr_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
 }
 
 #[post("/image_upload/")]
-async fn image_upload_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<ImageUploadModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn image_upload_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<ImageUploadModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "image upload";
@@ -2170,18 +2201,15 @@ async fn image_upload_handler(web_config: web::Data<GlobalConfigModel>,info:web:
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -2211,14 +2239,14 @@ async fn image_upload_handler(web_config: web::Data<GlobalConfigModel>,info:web:
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -2226,7 +2254,7 @@ async fn image_upload_handler(web_config: web::Data<GlobalConfigModel>,info:web:
 
 
 #[post("/vdr_result/")]
-async fn vdr_result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<VDRResultModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn vdr_result_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<VDRResultModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "vdr_result";
@@ -2240,18 +2268,15 @@ async fn vdr_result_handler(web_config: web::Data<GlobalConfigModel>,info:web::J
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -2273,21 +2298,21 @@ async fn vdr_result_handler(web_config: web::Data<GlobalConfigModel>,info:web::J
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
 }
 
 #[post("/withdraw_init/")]
-async fn withdraw_init_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<WithdrawInitModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn withdraw_init_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<WithdrawInitModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "withdraw_init";
@@ -2301,18 +2326,15 @@ async fn withdraw_init_handler(web_config: web::Data<GlobalConfigModel>,info:web
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -2339,14 +2361,14 @@ async fn withdraw_init_handler(web_config: web::Data<GlobalConfigModel>,info:web
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -2354,7 +2376,7 @@ async fn withdraw_init_handler(web_config: web::Data<GlobalConfigModel>,info:web
 
 
 #[post("/withdraw_confirmation/")]
-async fn withdraw_confirmation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<WithdrawConfirmModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn withdraw_confirmation_handler(web_config: web::Data<GlobalConfigModel>,info:web::Json<WithdrawConfirmModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "withdraw_confirmation";
@@ -2368,18 +2390,15 @@ async fn withdraw_confirmation_handler(web_config: web::Data<GlobalConfigModel>,
         Ok(decrypt_user_id)=>{
             if header_value.user_id != decrypt_user_id{
                 if io_log ==0{
-                    info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
                 }
-                let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-                return Ok(web::Json(json_data));
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
             }
         }
         Err(e)=>{
-            if error_log ==0{
-                error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-            }
-            let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-            return Ok(web::Json(json_data)) 
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
         }
     };
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -2408,21 +2427,21 @@ async fn withdraw_confirmation_handler(web_config: web::Data<GlobalConfigModel>,
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
 }
 
 #[get("/logout/")]
-async fn logout_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<impl Responder,Box<dyn std::error::Error>>{
+async fn logout_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest)-> Result<HttpResponse,Box<dyn std::error::Error>>{
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "log out";
@@ -2432,25 +2451,22 @@ async fn logout_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest
     info!("{},,,,,{}",req_stamp,method);
     //Header Section
     let header_value = header_extractor(req.clone()).await?;
-    // let jwt_val = protected(req).await;
-    // match jwt_val{
-    //     Ok(decrypt_user_id)=>{
-    //         if header_value.user_id != decrypt_user_id{
-    //             if io_log ==0{
-    //                 info!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
-    //             }
-    //             let json_data = json!({"result":{"Status_ID":"403","Message":"Unauthorized"}});
-    //             return Ok(web::Json(json_data));
-    //         }
-    //     }
-    //     Err(e)=>{
-    //         if error_log ==0{
-    //             error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
-    //         }
-    //         let json_data = json!({"result":{"Status_ID":"403","Message":e.to_string()}});
-    //         return Ok(web::Json(json_data)) 
-    //     }
-    // };
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
+            }
+        }
+        Err(e)=>{
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
+        }
+    };
     //IO Logging Section
     if io_log ==0{
         info!("STAMP : {:?}, REQUEST ,METHOD : {:?}, HEADER : {:?} ",req_stamp,method,header_value);
@@ -2464,14 +2480,14 @@ async fn logout_handler(web_config: web::Data<GlobalConfigModel>,req:HttpRequest
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
-            return Ok(web::Json(parsed));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            return Ok(web::Json(parsed)) 
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
