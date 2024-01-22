@@ -1,7 +1,7 @@
 [
     {
         "gameID": 1,
-        "gamegroupID": 3,
+        "gamegroupID": 6,
         "gameName": "Quick Win",
         "icon": "Quick-Win.webp",   
         "gameUrl":"/quickwin",         
@@ -10,7 +10,7 @@
     },
     {
         "gameID": 3,
-        "gamegroupID": 3,
+        "gamegroupID": 6,
         "gameName": "SICBO",
         "icon": "sic-bo.webp",
         "gameUrl":"/sicbo",
@@ -19,7 +19,7 @@
     },
     {
         "gameID": 4,
-        "gamegroupID": 3,
+        "gamegroupID": 6,
         "gameName": "Quick 9",
         "icon": "quick-9.webp",
         "gameUrl":"/quick9",
@@ -28,47 +28,28 @@
     },
 {
         "gameID": 7,
-        "gamegroupID": 3,
+        "gamegroupID":6,
         "gameName": "Roulette",
         "icon": "Roulette.webp",   
         "gameUrl":"/roulette",         
         "favID":1,
         "ggId":"40"
     },
-
-    {
-        "gameID": 5,
-        "gamegroupID": 3,
-        "gameName": "Scratch",
-        "icon": "scratch.webp",
-        "gameUrl":"/scratch",
-        "favID":1,
-        "ggId":""
-    },
     {
         "gameID": 6,
-        "gamegroupID": 3,
+        "gamegroupID": 6,
         "gameName": "Panta",
         "icon": "panta.webp",
         "gameUrl":"/Panta",
         "favID":1,
         "ggId":"59"
-    },    
-    {
-        "gameID": 10,
-        "gamegroupID": 3,
-        "gameName": "Rapid Win",
-        "icon": "rapid-win.webp",
-        "gameUrl":"/rapidwingames",
-        "favID":1,
-        "ggId":""
-    },  
+    },
     {
         "gameID": 2,
         "gamegroupID": 1,
         "gameName": "ROMAN LEGIONS 100",
         "icon": "RomanLegions100.webp",
-        "gameUrl":"http://220.225.104.151/InstaSlot/Slotgames/",
+        "gameUrl":"http://220.225.104.151/InstaSlot_v2/Slotgames/",
         "favID":167,
         "ggId":"60"
     },
@@ -77,7 +58,7 @@
         "gamegroupID": 1,
         "gameName": "GOLDEN MIC",
         "icon": "GoldenMic.webp",
-        "gameUrl":"https://cashcafe.ae/cashcafeinstaslot/SlotWays_v2/",
+        "gameUrl":"http://220.225.104.151/InstaSlot_v2/SlotWays_v2/",
         "favID":500,
         "ggId":"60"
     },
@@ -86,7 +67,7 @@
         "gamegroupID": 1,
         "gameName": "FORTUNE PIRATES 50",
         "icon": "FORTUNEPIRATES_50L.webp",
-        "gameUrl":"http://220.225.104.151/InstaSlot/Slotgames/",
+        "gameUrl":"http://220.225.104.151/InstaSlot_v2/Slotgames/",
         "favID":162,
         "ggId":"60"
     },
@@ -95,7 +76,7 @@
         "gamegroupID": 1,
         "gameName": "FORTUNE PIRATES 40",
         "icon": "FORTUNEPIRATES_40L.webp",
-        "gameUrl":"http://220.225.104.151/InstaSlot/Slotgames/",
+        "gameUrl":"http://220.225.104.151/InstaSlot_v2/Slotgames/",
         "favID":161,
         "ggId":"60"
     },
@@ -104,8 +85,80 @@
         "gamegroupID": 1,
         "gameName": "Magic Aquarium 10",
         "icon": "MagicAquarium10.webp",
-        "gameUrl":"http://220.225.104.151/InstaSlot/Slotgames/",
+        "gameUrl":"http://220.225.104.151/InstaSlot_v2/Slotgames/",
         "favID":154,
         "ggId":"60"
+    },
+        {
+        "gameID": 2,
+        "gamegroupID": 7,
+        "gameName": "GEMS COLLECTION",
+        "icon": "GEMSCOLLECTION.webp",
+        "gameUrl":"http://220.225.104.151/InstaSlot_v2/InstantGames/",
+        "favID":205,
+        "ggId":"61"
+    },
+        {
+        "gameID": 2,
+        "gamegroupID": 7,
+        "gameName": "CANDY STREAK",
+        "icon": "CANDYSTREAK.webp",
+        "gameUrl":"http://220.225.104.151/InstaSlot_v2/InstantGames/",
+        "favID":206,
+        "ggId":"61"
+    },
+        {
+        "gameID": 2,
+        "gamegroupID": 7,
+        "gameName": "LUCKY 3",
+        "icon": "LUCKY3.webp",
+        "gameUrl":"http://220.225.104.151/InstaSlot_v2/InstantGames/",
+        "favID":207,
+        "ggId":"61"
+    },
+        {
+        "gameID": 2,
+        "gamegroupID": 7,
+        "gameName": "LUCKY TURTLE",
+        "icon": "LuckyTurtle.webp",
+        "gameUrl":"http://220.225.104.151/InstaSlot_v2/InstantGames/",
+        "favID":208,
+        "ggId":"61"
+    },
+        {
+        "gameID": 2,
+        "gamegroupID": 7,
+        "gameName": "STROMY SHOOTER",
+        "icon": "StromyShooter.webp",
+        "gameUrl":"http://220.225.104.151/InstaSlot_v2/InstantGames/",
+        "favID":209,
+        "ggId":"61"
+    },
+        {
+        "gameID": 0,
+        "gamegroupID": 3,
+        "gameName": "VDR",
+        "icon": "vdr.webp",
+        "gameUrl":"/virtual",
+        "favID":31,
+        "ggId":"45"
+    },
+        {
+        "gameID": 0,
+        "gamegroupID": 3,
+        "gameName": "VHR",
+        "icon": "vhr.webp",
+        "gameUrl":"/horsevirtual",
+        "favID":32,
+        "ggId":"46"
+    },
+        {
+        "gameID": 0,
+        "gamegroupID": 3,
+        "gameName": "Harness",
+        "icon": "harness.webp",
+        "gameUrl":"/harness",
+        "favID":30,
+        "ggId":"47"
     }
   ]
