@@ -336,7 +336,7 @@ async fn available_games_handler(web_config: web::Data<GlobalConfigModel>,ext:we
     let dt = Utc::now();
     let req_stamp = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
     let method = "available games";
-    let io_log = web_config.io_log;
+    let io_log: i32 = web_config.io_log;
     let error_log = web_config.error_log;
     // request logger....
     //Header Section
@@ -358,6 +358,7 @@ async fn available_games_handler(web_config: web::Data<GlobalConfigModel>,ext:we
         }
     };
     let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
+    println!("{:?}",decrypt_json_string);
     let info=serde_json::from_str::<AvailableGamesModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
     //Header Section
@@ -375,21 +376,21 @@ async fn available_games_handler(web_config: web::Data<GlobalConfigModel>,ext:we
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
-            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
-            let encrypt_json = json!({"data":encrypted_data});
+            // let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            // let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(encrypt_json));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
-            let encrypt_json = json!({"data":encrypted_data});
-            return Ok(HttpResponse::Ok().json(encrypt_json));
+            // let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            // let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -812,22 +813,22 @@ async fn get_fav_games_handler(web_config: web::Data<GlobalConfigModel>,ext:web:
     // request logger....
     //Header Section
     let header_value = header_extractor(req.clone()).await?;
-    // let jwt_val = protected(req).await;
-    // match jwt_val{
-    //     Ok(decrypt_user_id)=>{
-    //         if header_value.user_id != decrypt_user_id{
-    //             if io_log ==0{
-    //                 error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
-    //             }
-    //             let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
-    //             return Ok(HttpResponse::Unauthorized().json(json_data));
-    //         }
-    //     }
-    //     Err(e)=>{
-    //         let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
-    //         return Ok(HttpResponse::Unauthorized().json(json_data));
-    //     }
-    // };
+    let jwt_val = protected(req).await;
+    match jwt_val{
+        Ok(decrypt_user_id)=>{
+            if header_value.user_id != decrypt_user_id{
+                if io_log ==0{
+                    error!("STAMP : {:?}, Fraudulent Transaction ,METHOD : {:?}, HEADER : {:?}",req_stamp,method,header_value);
+                }
+                let json_data = json!({"result":{"Status_ID":"401","Message":"Unauthorized"}});
+                return Ok(HttpResponse::Unauthorized().json(json_data));
+            }
+        }
+        Err(e)=>{
+            let json_data = json!({"result":{"Status_ID":"401","Message":e.to_string()}});
+            return Ok(HttpResponse::Unauthorized().json(json_data));
+        }
+    };
     let decrypt_json_string = data_decryption(ext.data.to_string(), "./key_files/privatekey.pem".to_string()).await?;
     let info=serde_json::from_str::<GetFavGamesModel>(&decrypt_json_string)?;
     // let user_id = req.headers().get("APIKEY").unwrap();
@@ -847,21 +848,21 @@ async fn get_fav_games_handler(web_config: web::Data<GlobalConfigModel>,ext:web:
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
             println!("{:?}",parsed);
-            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
-            let encrypt_json = json!({"data":encrypted_data});
+            // let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            // let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(encrypt_json));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
-            let encrypt_json = json!({"data":encrypted_data});
-            return Ok(HttpResponse::Ok().json(encrypt_json));
+            // let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            // let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
@@ -977,21 +978,21 @@ async fn get_slot_games_handler(web_config: web::Data<GlobalConfigModel>,ext:web
         Ok(x)=>{
             let j = format!("{{\"result\":{}}}",x);
             let parsed: Value = serde_json::from_str(&j)?;
-            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
-            let encrypt_json = json!({"data":encrypted_data});
+            // let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            // let encrypt_json = json!({"data":encrypted_data});
             if io_log ==0{
                 info!("STAMP : {:?}, RESPONSE ,METHOD : {:?} ,BODY : {:?}",req_stamp,method,parsed);
             }
-            return Ok(HttpResponse::Ok().json(encrypt_json));
+            return Ok(HttpResponse::Ok().json(parsed));
         }
         Err(e) =>{
             if error_log ==0{
                 error!("stamp : {:?}method : {:?},,ERROR : {:?}",req_stamp,method,e);
             }
             let parsed: Value = serde_json::from_str("{\"result\":{\"Status_Id\":1,\"Message\":\"Internal Server Error\"}}")?;
-            let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
-            let encrypt_json = json!({"data":encrypted_data});
-            return Ok(HttpResponse::Ok().json(encrypt_json));
+            // let encrypted_data = data_encryption(parsed.to_string(), "./key_files/GIpublickey.pem".to_string()).await?;
+            // let encrypt_json = json!({"data":encrypted_data});
+            return Ok(HttpResponse::Ok().json(parsed));
         }
     }
     
